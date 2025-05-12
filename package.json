@@ -1,5 +1,5 @@
 {
-  "name": "@ai0x0/sdk",
+  "name": "@ai0x0/utils",
   "version": "0.0.0",
   "description": "AI0x0 utils",
   "keywords": [
@@ -40,12 +40,13 @@
     ],
     "*.{ts,tsx,js}": [
       "eslint",
-      "bash -c tsc"
+      "bash -c tsc --declaration false"
     ]
   },
   "dependencies": {
     "dayjs": "^1.11.13",
     "drizzle-orm": "^0.38.3",
+    "drizzle-zod": "^0.7.1",
     "next": "^15.3.2",
     "next-rest-framework": "npm:@infoxchange/next-rest-framework-patch@^6.0.6",
     "zod": "^3.24.4"

@@ -6643,6 +6643,11 @@ drizzle-orm@^0.38.3:
   resolved "https://registry.npmmirror.com/drizzle-orm/-/drizzle-orm-0.38.4.tgz#5c2eaf8f2ea506e626ecd1971bb2751c113b3ec7"
   integrity sha512-s7/5BpLKO+WJRHspvpqTydxFob8i1vo2rEx4pY6TGY7QSMuUfWUuzaY0DIpXCkgHOo37BaFC+SJQb99dDUXT3Q==
 
+drizzle-zod@^0.7.1:
+  version "0.7.1"
+  resolved "https://registry.npmjs.org/drizzle-zod/-/drizzle-zod-0.7.1.tgz#67f6169533c0405e0d70bd87a41b64999416db18"
+  integrity sha512-nZzALOdz44/AL2U005UlmMqaQ1qe5JfanvLujiTHiiT8+vZJTBFhj3pY4Vk+L6UWyKFfNmLhk602Hn4kCTynKQ==
+
 dumi-afx-deps@^1.0.0-alpha.19:
   version "1.0.0-alpha.20"
   resolved "https://registry.npmmirror.com/dumi-afx-deps/-/dumi-afx-deps-1.0.0-alpha.20.tgz#f50b08f08da16bc2601861bd0408404b0ef90783"
