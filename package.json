@@ -1,0 +1,97 @@
+{
+  "name": "@ai0x0/sdk",
+  "version": "0.0.0",
+  "description": "AI0x0 utils",
+  "keywords": [
+    "ai0x0"
+  ],
+  "homepage": "https://github.com/ai0x0/utils",
+  "bugs": {
+    "url": "https://github.com/ai0x0/utils/issues/new"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ai0x0/utils.git"
+  },
+  "license": "MIT",
+  "author": "AI0x0 <i@ai0x0.com>",
+  "sideEffects": false,
+  "main": "./lib/index.js",
+  "module": "./es/index.js",
+  "types": "./lib/index.d.ts",
+  "files": [
+    "lib",
+    "es"
+  ],
+  "scripts": {
+    "build": "father build",
+    "build:watch": "father dev",
+    "ci": "npm run lint && npm run type-check && npm run doctor",
+    "docs:build": "dumi build",
+    "docs:dev": "dumi dev",
+    "doctor": "father doctor",
+    "i18n-md": "lobe-i18n md",
+    "lint": "eslint \"{src,example}/**/*.{js,jsx,ts,tsx}\" --fix",
+    "lint:md": "remark . --quiet --frail --output",
+    "lint:style": "stylelint \"{src,example}/**/*.{js,jsx,ts,tsx}\" --fix",
+    "prepack": "npm run build && clean-pkg-json",
+    "prepare": "husky install",
+    "prepublishOnly": "npm run build",
+    "prettier": "prettier -c --write --no-error-on-unmatched-pattern \"**/**\"",
+    "release": "semantic-release",
+    "start": "npm run docs:dev",
+    "test": "vitest --passWithNoTests",
+    "test:coverage": "vitest run --coverage  --passWithNoTests",
+    "test:update": "vitest -u",
+    "type-check": "tsc -p tsconfig-check.json"
+  },
+  "lint-staged": {
+    "*.md": [
+      "remark --quiet --output --",
+      "prettier --write --no-error-on-unmatched-pattern"
+    ],
+    "*.json": [
+      "prettier --write --no-error-on-unmatched-pattern"
+    ],
+    "*.{js,jsx}": [
+      "prettier --write",
+      "stylelint --fix",
+      "eslint --fix"
+    ],
+    "*.{ts,tsx}": [
+      "prettier --parser=typescript --write",
+      "stylelint --fix",
+      "eslint --fix"
+    ]
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@commitlint/cli": "^19.8.0",
+    "@lobehub/lint": "^1.25.7",
+    "@testing-library/react": "^16.2.0",
+    "@types/react": "^19.0.12",
+    "@types/react-dom": "^19.0.4",
+    "antd": "^5.24.5",
+    "babel-plugin-antd-style": "^1.0.4",
+    "clean-package": "^2.2.0",
+    "commitlint": "^19.8.0",
+    "cross-env": "^7.0.3",
+    "dumi": "^2.4.18",
+    "dumi-theme-lobehub": "^2.0.0",
+    "eslint": "^8.57.1",
+    "father": "^4.5.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.0",
+    "prettier": "^3.5.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "remark-cli": "^11",
+    "stylelint": "^16.19.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  }
+}
