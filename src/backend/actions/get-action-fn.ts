@@ -1,6 +1,6 @@
 import { ZodSchema } from "zod";
 import { rpcOperation } from "next-rest-framework";
-import { getListQuery } from "./get-List-query";
+import { getListQuery } from "./get-list-query";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { SelectedFields } from "drizzle-orm/pg-core/query-builders/select.types";
 import { getListData } from "./get-list-data";

@@ -1,5 +1,5 @@
 import { ZodSchema } from "zod";
-import { getListQuery } from "./get-List-query";
+import { getListQuery } from "./get-list-query";
 import { rpcOperation } from "next-rest-framework";
 import { listBodySchema } from "../schemas";
 

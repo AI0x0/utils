@@ -3,7 +3,7 @@ import { BaseTable, GetListRelations } from "@/backend/types";
 import { rpcOperation } from "next-rest-framework";
 import { listBodySchema } from "@/backend/schemas";
 import { SelectedFields } from "drizzle-orm/pg-core/query-builders/select.types";
-import { getListQuery } from "@/backend/actions/get-List-query";
+import { getListQuery } from "@/backend/actions/get-list-query";
 import { getListData } from "@/backend/actions/get-list-data";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 
