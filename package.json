@@ -40,7 +40,7 @@
     ],
     "*.{ts,tsx,js}": [
       "eslint",
-      "bash -c tsc --declaration false"
+      "bash -c tsc -p tsconfig.check.json"
     ]
   },
   "dependencies": {
