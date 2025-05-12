@@ -1,27 +1,30 @@
 {
   "compilerOptions": {
-    "sourceMap": true,
-    "skipDefaultLibCheck": true,
-    "jsx": "react-jsx",
-    "baseUrl": ".",
     "target": "ESNext",
-    "lib": ["ESNext", "dom"],
-    "allowSyntheticDefaultImports": true,
-    "declaration": true,
-    "moduleResolution": "node",
-    "forceConsistentCasingInFileNames": true,
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
-    "resolveJsonModule": true,
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "baseUrl": "./",
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
     "paths": {
-      "@/*": ["src/*"],
-      "@ai0x0/sdk": ["src"],
-      "@ai0x0/sdk/*": ["src/*", "*"]
-    },
-    "types": []
+      "@/*": ["src/*"]
+    }
   },
-  "exclude": ["client.ts", "tests", "openapi.ts"],
-  "include": ["src", "docs", "typings", "*.ts"]
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules"]
 }
