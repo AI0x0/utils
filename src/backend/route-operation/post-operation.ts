@@ -51,7 +51,7 @@ export const createPostOperation =
         );
         const [data] = await postActionFn({ bodySchema, db, table })({
           ...body,
-          editorId: userId,
+          creatorId: userId,
         });
         return TypedNextResponse.json(data, { status: 200 });
       }) as any;
