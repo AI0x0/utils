@@ -18,9 +18,11 @@ export interface PostOperationOptions<
 
 export const createPostOperation =
   <T extends ZodSchema, TTable extends PgTable>({
+    getSession,
     db,
   }: {
     db: NodePgDatabase<any>;
+    getSession: (req: NextRequest) => Promise<{ userId?: string } | undefined>;
   }) =>
   ({ bodySchema, setBody, summary, table }: PostOperationOptions<T, TTable>) =>
     routeOperation({
@@ -42,10 +44,14 @@ export const createPostOperation =
         },
       ])
       .handler(async (req) => {
+        const { userId } = (await getSession(req)) || {};
         const body = Object.assign(
           (await setBody?.(req)) || {},
           await req.json(),
         );
-        const [data] = await postActionFn({ bodySchema, db, table })(body);
+        const [data] = await postActionFn({ bodySchema, db, table })({
+          ...body,
+          editorId: userId,
+        });
         return TypedNextResponse.json(data, { status: 200 });
       }) as any;

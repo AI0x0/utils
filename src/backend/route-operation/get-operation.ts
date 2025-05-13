@@ -18,13 +18,16 @@ export interface GetOperationOptions<
   setParams?: (req: NextRequest) => Promise<Record<string, any>>;
   summary?: string;
   table: TTable;
+  byCreator?: boolean;
 }
 
 export const createGetOperation =
   <T extends ZodSchema, Q extends ZodSchema, TTable extends BaseTable>({
+    getSession,
     db,
   }: {
     db: NodePgDatabase<any>;
+    getSession: (req: NextRequest) => Promise<{ userId?: string } | undefined>;
   }) =>
   ({
     querySchema,
@@ -34,6 +37,7 @@ export const createGetOperation =
     relations,
     setParams,
     jsonArrayFields,
+    byCreator = true,
   }: GetOperationOptions<T, Q, TTable>) =>
     routeOperation({
       method: "GET",
@@ -53,7 +57,12 @@ export const createGetOperation =
         },
       ])
       .handler(async (req) => {
-        const params = await setParams?.(req);
+        const params = (await setParams?.(req)) || {};
+        if (byCreator) {
+          const { userId } = (await getSession(req)) || {};
+          params.creatorId = userId;
+        }
+
         const result = await getActionFn({
           bodySchema,
           db,

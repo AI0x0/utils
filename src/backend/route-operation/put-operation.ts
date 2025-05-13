@@ -18,8 +18,10 @@ export interface PutOperationOptions<
 
 export const createPutOperation =
   <T extends ZodSchema, TTable extends PgTable>({
+    getSession,
     db,
   }: {
+    getSession: (req: NextRequest) => Promise<{ userId?: string } | undefined>;
     db: NodePgDatabase<any>;
   }) =>
   ({ bodySchema, table, summary, setBody }: PutOperationOptions<T, TTable>) =>
@@ -35,6 +37,7 @@ export const createPutOperation =
         contentType: "application/json",
       })
       .handler(async (req) => {
+        const { userId } = (await getSession(req)) || {};
         const body = Object.assign(
           (await setBody?.(req)) || {},
           await req.json(),
@@ -44,7 +47,10 @@ export const createPutOperation =
             bodySchema,
             table,
             db,
-          })(body),
+          })({
+            ...body,
+            editorId: userId,
+          }),
           { status: 200 },
         );
       }) as any;

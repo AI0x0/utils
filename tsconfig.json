@@ -13,8 +13,6 @@
     "jsx": "preserve",
     "incremental": true,
     "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
     "baseUrl": "./",
     "plugins": [
       {

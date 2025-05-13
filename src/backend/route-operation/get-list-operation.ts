@@ -17,6 +17,7 @@ export interface GetListOperationOptions<
   querySchema: Q;
   relations?: GetListRelations;
   setParams?: (req: NextRequest) => Promise<Record<string, unknown>>;
+  byCreator?: boolean;
   summary?: string;
   table: TTable;
   transform?: <D extends T>(data: {
@@ -31,8 +32,10 @@ export interface GetListOperationOptions<
 export const createGetListOperation =
   <T extends ZodSchema, Q extends ZodSchema, TTable extends BaseTable>({
     db,
+    getSession,
   }: {
     db: NodePgDatabase<any>;
+    getSession: (req: NextRequest) => Promise<{ userId?: string } | undefined>;
   }) =>
   ({
     querySchema,
@@ -43,6 +46,7 @@ export const createGetListOperation =
     jsonArrayFields,
     setParams,
     transform,
+    byCreator = true,
   }: GetListOperationOptions<T, Q, TTable>) =>
     routeOperation({
       method: "GET",
@@ -63,6 +67,11 @@ export const createGetListOperation =
       ])
       .handler(async (req) => {
         const params = (await setParams?.(req)) || {};
+        if (byCreator) {
+          const { userId } = (await getSession(req)) || {};
+          params.creatorId = userId;
+        }
+
         let result = await getListActionFn({
           bodySchema,
           db,
