@@ -28,7 +28,6 @@
     "build:watch": "father dev",
     "docs:build": "dumi build",
     "docs:dev": "dumi dev",
-    "prepack": "npm run build && clean-package",
     "prepare": "husky install",
     "prepublishOnly": "npm run build",
     "release": "semantic-release",

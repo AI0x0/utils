@@ -20,7 +20,7 @@ export interface GetListOperationOptions<
   byCreator?: boolean;
   summary?: string;
   table: TTable;
-  transform?: <D extends T>(data: {
+  onSuccess?: <D extends T>(data: {
     data: z.infer<D>[];
     total: number;
   }) => Promise<{
@@ -45,7 +45,7 @@ export const createGetListOperation =
     relations,
     jsonArrayFields,
     setParams,
-    transform,
+    onSuccess,
     byCreator = true,
   }: GetListOperationOptions<T, Q, TTable>) =>
     routeOperation({
@@ -85,8 +85,8 @@ export const createGetListOperation =
           ),
         );
 
-        if (transform) {
-          result = await transform(result);
+        if (onSuccess) {
+          result = await onSuccess(result);
         }
 
         return TypedNextResponse.json(result, { status: 200 });

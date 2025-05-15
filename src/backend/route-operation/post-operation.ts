@@ -13,18 +13,25 @@ export interface PostOperationOptions<
   bodySchema: T;
   setBody?: (req: NextRequest) => Promise<Partial<z.infer<T>>>;
   summary?: string;
+  onSuccess?: (data: z.infer<T>) => Promise<z.infer<T>>;
   table: TTable;
 }
 
 export const createPostOperation =
-  <T extends ZodSchema, TTable extends PgTable>({
+  ({
     getSession,
     db,
   }: {
     db: NodePgDatabase<any>;
     getSession: (req: NextRequest) => Promise<{ userId?: string } | undefined>;
   }) =>
-  ({ bodySchema, setBody, summary, table }: PostOperationOptions<T, TTable>) =>
+  <T extends ZodSchema, TTable extends PgTable>({
+    bodySchema,
+    setBody,
+    summary,
+    table,
+    onSuccess,
+  }: PostOperationOptions<T, TTable>) =>
     routeOperation({
       method: "POST",
       openApiOperation: {
@@ -49,9 +56,12 @@ export const createPostOperation =
           (await setBody?.(req)) || {},
           await req.json(),
         );
-        const [data] = await postActionFn({ bodySchema, db, table })({
+        let [data] = await postActionFn({ bodySchema, db, table })({
           ...body,
           creatorId: userId,
         });
+        if (onSuccess) {
+          data = await onSuccess(data);
+        }
         return TypedNextResponse.json(data, { status: 200 });
       }) as any;

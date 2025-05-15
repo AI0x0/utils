@@ -1,10 +1,10 @@
 import { z, ZodSchema } from "zod";
-import { PgTable } from "drizzle-orm/pg-core";
 import { transformBody } from "./transform-body";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
+import { BaseTable } from "@/backend/types";
 
-export function putActionFn<T extends ZodSchema, TTable extends PgTable>({
+export function putActionFn<T extends ZodSchema, TTable extends BaseTable>({
   db,
   table,
 }: {
@@ -13,14 +13,10 @@ export function putActionFn<T extends ZodSchema, TTable extends PgTable>({
   table: TTable;
 }) {
   return async (body: Partial<z.infer<T>>): Promise<T["_output"]> => {
-    return (
-      db
-        .update(table)
-        .set(transformBody(body))
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        .where(eq(table.id, body.id))
-        .returning()
-    );
+    return db
+      .update(table)
+      .set(transformBody(body))
+      .where(eq(table.id, body.id))
+      .returning();
   };
 }

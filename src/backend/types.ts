@@ -3,8 +3,12 @@ import { SQL } from "drizzle-orm";
 
 // 定义一个包含必要字段的接口
 export interface BaseTable extends PgTable {
-  createdAt: PgColumn;
   id: PgColumn;
+  creatorId: PgColumn;
+  editorId: PgColumn;
+  accessedAt: PgColumn;
+  createdAt: PgColumn;
+  updatedAt: PgColumn;
 }
 
 export type GetListRelations = {

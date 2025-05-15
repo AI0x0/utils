@@ -21,7 +21,7 @@ const createdAt = () => timestamptz("created_at").notNull().defaultNow();
 const updatedAt = () => timestamptz("updated_at").notNull().defaultNow();
 const accessedAt = () => timestamptz("accessed_at").notNull().defaultNow();
 
-const basicFields = {
+export const basicFields = {
   id: uuid("id").defaultRandom().primaryKey(),
   creatorId: uuid("creator_id"),
   editorId: uuid("editor_id"),

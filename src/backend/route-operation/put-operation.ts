@@ -5,6 +5,7 @@ import getTableName from "@/backend/route-operation/get-table-name";
 import { putActionFn } from "@/backend/actions";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { NextRequest } from "next/server";
+import { BaseTable } from "@/backend/types";
 
 export interface PutOperationOptions<
   T extends ZodSchema,
@@ -17,7 +18,7 @@ export interface PutOperationOptions<
 }
 
 export const createPutOperation =
-  <T extends ZodSchema, TTable extends PgTable>({
+  <T extends ZodSchema, TTable extends BaseTable>({
     getSession,
     db,
   }: {
