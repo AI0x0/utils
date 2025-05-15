@@ -3,7 +3,7 @@ import { PgTable } from "drizzle-orm/pg-core";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { transformBody } from "./transform-body";
 
-export function postActionFn<T extends ZodSchema, TTable extends PgTable>({
+export function createPostAction<T extends ZodSchema, TTable extends PgTable>({
   table,
   db,
 }: {

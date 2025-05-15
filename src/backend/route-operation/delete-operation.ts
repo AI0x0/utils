@@ -2,7 +2,7 @@ import { routeOperation, TypedNextResponse } from "next-rest-framework";
 import { z } from "zod";
 import { BaseTable } from "@/backend/types";
 import getTableName from "@/backend/route-operation/get-table-name";
-import { deleteActionFn } from "@/backend/actions";
+import { createDeleteAction } from "@/backend/actions";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 
 export interface DeleteOperationOptions<TTable extends BaseTable> {
@@ -27,7 +27,10 @@ export const createDeleteOperation =
       })
       .handler(async (req) => {
         const { id } = await req.json();
-        return TypedNextResponse.json(await deleteActionFn({ table, db })(id), {
-          status: 200,
-        });
+        return TypedNextResponse.json(
+          await createDeleteAction({ table, db })(id),
+          {
+            status: 200,
+          },
+        );
       }) as any;

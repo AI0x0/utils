@@ -4,7 +4,7 @@ import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
 import { BaseTable } from "@/backend/types";
 
-export function putActionFn<T extends ZodSchema, TTable extends BaseTable>({
+export function createPutAction<T extends ZodSchema, TTable extends BaseTable>({
   db,
   table,
 }: {

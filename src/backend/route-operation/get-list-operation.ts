@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 import { routeOperation, TypedNextResponse } from "next-rest-framework";
 import getTableName from "./get-table-name";
 import { listBodySchema } from "@/backend/schemas";
-import { getListActionFn } from "@/backend/actions";
+import { createGetListAction } from "@/backend/actions";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { BaseTable, GetListRelations } from "@/backend/types";
 
@@ -72,7 +72,7 @@ export const createGetListOperation =
           params.creatorId = userId;
         }
 
-        let result = await getListActionFn({
+        let result = await createGetListAction({
           bodySchema,
           db,
           jsonArrayFields,

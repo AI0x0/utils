@@ -2,7 +2,7 @@ import { z, ZodSchema } from "zod";
 import { PgTable } from "drizzle-orm/pg-core";
 import { routeOperation, TypedNextResponse } from "next-rest-framework";
 import getTableName from "@/backend/route-operation/get-table-name";
-import { putActionFn } from "@/backend/actions";
+import { createPutAction } from "@/backend/actions";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { NextRequest } from "next/server";
 import { BaseTable } from "@/backend/types";
@@ -44,7 +44,7 @@ export const createPutOperation =
           await req.json(),
         );
         return TypedNextResponse.json(
-          await putActionFn({
+          await createPutAction({
             bodySchema,
             table,
             db,

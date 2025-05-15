@@ -2,7 +2,7 @@ import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
 import { BaseTable } from "@/backend/types";
 
-export function deleteActionFn<TTable extends BaseTable>({
+export function createDeleteAction<TTable extends BaseTable>({
   table,
   db,
 }: {

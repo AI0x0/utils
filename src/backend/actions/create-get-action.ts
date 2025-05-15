@@ -5,7 +5,7 @@ import { SelectedFields } from "drizzle-orm/pg-core/query-builders/select.types"
 import { getListData } from "./get-list-data";
 import { BaseTable, GetListRelations } from "@/backend/types";
 
-export function getActionFn<T extends ZodSchema, TTable extends BaseTable>({
+export function createGetAction<T extends ZodSchema, TTable extends BaseTable>({
   bodySchema,
   db,
   jsonArrayFields,

@@ -2,7 +2,7 @@ import { ZodSchema } from "zod";
 import { NextRequest } from "next/server";
 import { routeOperation, TypedNextResponse } from "next-rest-framework";
 import getTableName from "./get-table-name";
-import { getActionFn } from "../actions";
+import { createGetAction } from "../actions";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { BaseTable, GetListRelations } from "@/backend/types";
 
@@ -63,7 +63,7 @@ export const createGetOperation =
           params.creatorId = userId;
         }
 
-        const result = await getActionFn({
+        const result = await createGetAction({
           bodySchema,
           db,
           jsonArrayFields,

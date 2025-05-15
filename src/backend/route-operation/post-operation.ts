@@ -3,7 +3,7 @@ import { PgTable } from "drizzle-orm/pg-core";
 import { NextRequest } from "next/server";
 import { routeOperation, TypedNextResponse } from "next-rest-framework";
 import getTableName from "./get-table-name";
-import { postActionFn } from "../actions";
+import { createPostAction } from "../actions";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 
 export interface PostOperationOptions<
@@ -56,7 +56,7 @@ export const createPostOperation =
           (await setBody?.(req)) || {},
           await req.json(),
         );
-        let [data] = await postActionFn({ bodySchema, db, table })({
+        let [data] = await createPostAction({ bodySchema, db, table })({
           ...body,
           creatorId: userId,
         });

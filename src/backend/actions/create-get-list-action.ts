@@ -5,7 +5,10 @@ import { getListQuery } from "@/backend/actions/get-list-query";
 import { getListData } from "@/backend/actions/get-list-data";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 
-export function getListActionFn<T extends ZodSchema, TTable extends BaseTable>({
+export function createGetListAction<
+  T extends ZodSchema,
+  TTable extends BaseTable,
+>({
   bodySchema,
   db,
   jsonArrayFields,

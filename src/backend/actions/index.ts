@@ -1,6 +1,6 @@
-export { deleteActionFn } from "./delete-action-fn";
-export { getActionFn } from "./get-action-fn";
-export { getListActionFn } from "./get-list-action-fn";
-export { postActionFn } from "./post-action-fn";
-export { putActionFn } from "./put-action-fn";
+export { createDeleteAction } from "./create-delete-action";
+export { createGetAction } from "./create-get-action";
+export { createGetListAction } from "./create-get-list-action";
+export { createPostAction } from "./create-post-action";
+export { createPutAction } from "./create-put-action";
 export { getListQuery } from "./get-list-query";
