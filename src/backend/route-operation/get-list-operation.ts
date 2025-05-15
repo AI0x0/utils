@@ -76,7 +76,6 @@ export const createGetListOperation =
           bodySchema,
           db,
           jsonArrayFields,
-          querySchema,
           relations,
           table,
         })(

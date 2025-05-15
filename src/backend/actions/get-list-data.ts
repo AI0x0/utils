@@ -32,5 +32,5 @@ export function getListData<B extends ZodSchema>({
       const [{ count }] = await countQuery.execute();
 
       return { data, total: Number(count) };
-    }) as any;
+    });
 }

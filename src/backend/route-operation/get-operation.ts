@@ -67,14 +67,13 @@ export const createGetOperation =
           bodySchema,
           db,
           jsonArrayFields,
-          querySchema,
           relations,
           table,
         })(
           Object.assign(
             Object.fromEntries(new URL(req.url).searchParams),
             params,
-          ),
+          ) as any,
         );
         return TypedNextResponse.json(result, { status: 200 });
       }) as any;
