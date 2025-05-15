@@ -8,10 +8,15 @@ import { NodePgDatabase } from "drizzle-orm/node-postgres";
 export interface DeleteOperationOptions<TTable extends BaseTable> {
   table: TTable;
   summary?: string;
+  onSuccess?: () => Promise<void>;
 }
 export const createDeleteOperation =
-  <TTable extends BaseTable>({ db }: { db: NodePgDatabase<any> }) =>
-  ({ table, summary }: DeleteOperationOptions<TTable>) =>
+  ({ db }: { db: NodePgDatabase<any> }) =>
+  <TTable extends BaseTable>({
+    table,
+    summary,
+    onSuccess,
+  }: DeleteOperationOptions<TTable>) =>
     routeOperation({
       method: "DELETE",
       openApiOperation: {
@@ -27,10 +32,9 @@ export const createDeleteOperation =
       })
       .handler(async (req) => {
         const { id } = await req.json();
-        return TypedNextResponse.json(
-          await createDeleteAction({ table, db })(id),
-          {
-            status: 200,
-          },
-        );
+        const data = await createDeleteAction({ table, db })(id);
+        await onSuccess?.();
+        return TypedNextResponse.json(data, {
+          status: 200,
+        });
       }) as any;

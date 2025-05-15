@@ -1,4 +1,4 @@
-import { ZodSchema } from "zod";
+import { z, ZodSchema } from "zod";
 import { NextRequest } from "next/server";
 import { routeOperation, TypedNextResponse } from "next-rest-framework";
 import getTableName from "./get-table-name";
@@ -16,20 +16,21 @@ export interface GetOperationOptions<
   querySchema: Q;
   relations?: GetListRelations;
   setParams?: (req: NextRequest) => Promise<Record<string, any>>;
+  onSuccess?: (data: z.infer<T>) => Promise<z.infer<T>>;
   summary?: string;
   table: TTable;
   byCreator?: boolean;
 }
 
 export const createGetOperation =
-  <T extends ZodSchema, Q extends ZodSchema, TTable extends BaseTable>({
+  ({
     getSession,
     db,
   }: {
     db: NodePgDatabase<any>;
     getSession: (req: NextRequest) => Promise<{ userId?: string } | undefined>;
   }) =>
-  ({
+  <T extends ZodSchema, Q extends ZodSchema, TTable extends BaseTable>({
     querySchema,
     bodySchema,
     table,
@@ -37,6 +38,7 @@ export const createGetOperation =
     relations,
     setParams,
     jsonArrayFields,
+    onSuccess,
     byCreator = true,
   }: GetOperationOptions<T, Q, TTable>) =>
     routeOperation({
@@ -63,7 +65,7 @@ export const createGetOperation =
           params.creatorId = userId;
         }
 
-        const result = await createGetAction({
+        let result = await createGetAction({
           bodySchema,
           db,
           jsonArrayFields,
@@ -75,5 +77,8 @@ export const createGetOperation =
             params,
           ) as any,
         );
+        if (onSuccess) {
+          result = await onSuccess(result);
+        }
         return TypedNextResponse.json(result, { status: 200 });
       }) as any;

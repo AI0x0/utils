@@ -15,17 +15,24 @@ export interface PutOperationOptions<
   table: TTable;
   summary?: string;
   setBody?: (req: NextRequest) => Promise<Partial<z.infer<T>>>;
+  onSuccess?: (data: z.infer<T>) => Promise<z.infer<T>>;
 }
 
 export const createPutOperation =
-  <T extends ZodSchema, TTable extends BaseTable>({
+  ({
     getSession,
     db,
   }: {
     getSession: (req: NextRequest) => Promise<{ userId?: string } | undefined>;
     db: NodePgDatabase<any>;
   }) =>
-  ({ bodySchema, table, summary, setBody }: PutOperationOptions<T, TTable>) =>
+  <T extends ZodSchema, TTable extends BaseTable>({
+    bodySchema,
+    table,
+    summary,
+    setBody,
+    onSuccess,
+  }: PutOperationOptions<T, TTable>) =>
     routeOperation({
       method: "PUT",
       openApiOperation: {
@@ -43,15 +50,16 @@ export const createPutOperation =
           (await setBody?.(req)) || {},
           await req.json(),
         );
-        return TypedNextResponse.json(
-          await createPutAction({
-            bodySchema,
-            table,
-            db,
-          })({
-            ...body,
-            editorId: userId,
-          }),
-          { status: 200 },
-        );
+        let data = await createPutAction({
+          bodySchema,
+          table,
+          db,
+        })({
+          ...body,
+          editorId: userId,
+        });
+        if (onSuccess) {
+          data = await onSuccess(data);
+        }
+        return TypedNextResponse.json(data, { status: 200 });
       }) as any;

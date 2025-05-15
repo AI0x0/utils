@@ -15,6 +15,7 @@ tmp
 # dependencies
 node_modules
 *.log
+*.tsbuildinfo
 #*.lock
 package-lock.json
 

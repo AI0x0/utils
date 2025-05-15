@@ -30,14 +30,14 @@ export interface GetListOperationOptions<
 }
 
 export const createGetListOperation =
-  <T extends ZodSchema, Q extends ZodSchema, TTable extends BaseTable>({
+  ({
     db,
     getSession,
   }: {
     db: NodePgDatabase<any>;
     getSession: (req: NextRequest) => Promise<{ userId?: string } | undefined>;
   }) =>
-  ({
+  <T extends ZodSchema, Q extends ZodSchema, TTable extends BaseTable>({
     querySchema,
     bodySchema,
     table,
