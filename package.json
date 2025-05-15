@@ -40,7 +40,7 @@
     ],
     "*.{ts,tsx,js}": [
       "eslint",
-      "bash -c tsc --noEmit -p tsconfig.json"
+      "tsc-files --noEmit"
     ]
   },
   "dependencies": {
@@ -76,6 +76,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "remark-cli": "^11",
+    "tsc-files": "^1.1.4",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"
   },

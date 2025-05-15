@@ -15390,6 +15390,11 @@ ts-toolbelt@^9.6.0:
   resolved "https://registry.npmmirror.com/ts-toolbelt/-/ts-toolbelt-9.6.0.tgz#50a25426cfed500d4a09bd1b3afb6f28879edfd5"
   integrity sha512-nsZd8ZeNUzukXPlJmTBwUAuABDe/9qtVDelJeT/qW0ow3ZS3BsQJtNkan1802aM9Uf68/Y8ljw86Hu0h5IUW3w==
 
+tsc-files@^1.1.4:
+  version "1.1.4"
+  resolved "https://registry.npmjs.org/tsc-files/-/tsc-files-1.1.4.tgz#e0b2042a9494500f528769f52a0d0105a48457dd"
+  integrity sha512-RePsRsOLru3BPpnf237y1Xe1oCGta8rmSYzM76kYo5tLGsv5R2r3s64yapYorGTPuuLyfS9NVbh9ydzmvNie2w==
+
 tsconfig-paths@4.0.0:
   version "4.0.0"
   resolved "https://registry.npmmirror.com/tsconfig-paths/-/tsconfig-paths-4.0.0.tgz#1082f5d99fd127b72397eef4809e4dd06d229b64"
