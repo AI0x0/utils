@@ -65,18 +65,19 @@ export const createGetOperation =
           params.creatorId = userId;
         }
 
-        let result = await createGetAction({
-          bodySchema,
-          db,
-          jsonArrayFields,
-          relations,
-          table,
-        })(
-          Object.assign(
-            Object.fromEntries(new URL(req.url).searchParams),
-            params,
-          ) as any,
-        );
+        let result =
+          (await createGetAction({
+            bodySchema,
+            db,
+            jsonArrayFields,
+            relations,
+            table,
+          })(
+            Object.assign(
+              Object.fromEntries(new URL(req.url).searchParams),
+              params,
+            ) as any,
+          )) || {};
         if (onSuccess) {
           result = await onSuccess(result);
         }
