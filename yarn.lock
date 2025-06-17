@@ -6658,10 +6658,10 @@ dumi-assets-types@2.4.14:
   resolved "https://registry.npmmirror.com/dumi-assets-types/-/dumi-assets-types-2.4.14.tgz#d0a3d24f810a43bf29a27a7f95e4d3b159bd3d1e"
   integrity sha512-k2Z3z7/IcHOYASP/nDjocShdzXatmOuhkAwgYw/4KNiq36gpAKjn5MlrPkzdGH70TbcHGLGEul9b/4sYJLoS9A==
 
-dumi-theme-lobehub@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.npmmirror.com/dumi-theme-lobehub/-/dumi-theme-lobehub-2.0.0.tgz#b1010bd93dd7f5b7c3033165991c5e7cf0874ef9"
-  integrity sha512-A2NjZwX3VW+jrl1jGZYen4L49tlqyvZH79zpst6xbb7fOgsf7cIlPuXKL8Cul1roBIAWb9zO0lo+xNxNycwE0Q==
+dumi-theme-lobehub@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.npmjs.org/dumi-theme-lobehub/-/dumi-theme-lobehub-2.0.1.tgz#7a8a70ebbcd47e04c95ad93cc82c3601b3bc94e0"
+  integrity sha512-SVNIF38y0VvCJv1TM38M/UeS1nZ4EbJ0bDbrMoFkce88uQg68pSP+hcNBtz9caYgyG+l1RP262AP1DmgKc9odg==
   dependencies:
     "@floating-ui/react" "^0.27.5"
     "@giscus/react" "^3.1.0"
@@ -11722,10 +11722,10 @@ neo-async@^2.6.2:
   resolved "https://registry.npmmirror.com/neo-async/-/neo-async-2.6.2.tgz#b4aafb93e3aeb2d8174ca53cf163ab7d7308305f"
   integrity sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==
 
-"next-rest-framework@npm:@infoxchange/next-rest-framework-patch@^6.0.6":
-  version "6.0.6"
-  resolved "https://registry.npmjs.org/@infoxchange/next-rest-framework-patch/-/next-rest-framework-patch-6.0.6.tgz#f61be530de3c52a3c683f1f78a90067a55930aac"
-  integrity sha512-fHRj2Qa9cum2pSDxS+aNp/ewkjDK8p6FsAPIwAUVaucrZ3craAJa3hjaqstpDsx+36wpLXOI8AQfAiwBIge1VQ==
+next-rest-framework@^6.0.7:
+  version "6.0.7"
+  resolved "https://registry.npmjs.org/next-rest-framework/-/next-rest-framework-6.0.7.tgz#65344f3c38c6703626fb64358e244188446da2f3"
+  integrity sha512-ruxHhvmpZdvcUZQKEs26SglqENmmCZBZtMTBvQenS8eLTYmFqtEg7wqFaiOWOAwmnw1Yc9Jed9foVDrJ/fLnrA==
   dependencies:
     chalk "4.1.2"
     commander "10.0.1"
