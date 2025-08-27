@@ -6,11 +6,13 @@ import {
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
-import { BuildExtraConfigColumns } from "drizzle-orm";
+import { BuildExtraConfigColumns, Table } from "drizzle-orm";
 import {
+  BuildRefine,
   createInsertSchema,
   createSelectSchema,
   createUpdateSchema,
+  NoUnknownKeys,
 } from "drizzle-zod";
 import { BuildSchema } from "drizzle-zod/schema.types.internal";
 
@@ -57,13 +59,17 @@ export const listBodySchema = <T extends ZodTypeAny>(schema: T) =>
 export const createTableSchema = <
   TTableName extends string,
   TColumnsMap extends Record<string, PgColumnBuilderBase>,
+  TTable extends Table,
+  TRefine extends BuildRefine<TTable["_"]["columns"]>,
 >({
   name,
   columns,
+  refineSchema,
   extraConfig,
 }: {
   name: TTableName;
   columns: TColumnsMap;
+  refineSchema?: NoUnknownKeys<TRefine, TTable["$inferSelect"]>;
   extraConfig?: (
     self: BuildExtraConfigColumns<
       string,
@@ -82,17 +88,21 @@ export const createTableSchema = <
     extraConfig,
   );
   // 创建基础的schema
-  const selectSchema = createSelectSchema(table) as BuildSchema<any, any, any>;
+  const selectSchema = createSelectSchema(
+    table as any,
+    refineSchema,
+  ) as BuildSchema<any, any, any>;
   return {
     table,
     selectSchema,
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    insertSchema: createInsertSchema(table, {}),
+    insertSchema: createInsertSchema(table, refineSchema),
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     updateSchema: createUpdateSchema(table, {
       id: z.string(),
+      ...refineSchema,
     }),
     querySchema: selectSchema.pick({
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
