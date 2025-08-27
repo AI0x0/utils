@@ -53,8 +53,8 @@ export const createPostOperation =
       .handler(async (req) => {
         const { userId } = (await getSession(req)) || {};
         const body = Object.assign(
-          (await setBody?.(req)) || {},
           await req.json(),
+          (await setBody?.(req)) || {},
         );
         let [data] = await createPostAction({ bodySchema, db, table })({
           ...body,
