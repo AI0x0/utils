@@ -4,18 +4,27 @@ import { BaseTable } from "@/backend/types";
 import getTableName from "@/backend/route-operation/get-table-name";
 import { createDeleteAction } from "@/backend/actions";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
+import { NextRequest } from "next/server";
 
 export interface DeleteOperationOptions<TTable extends BaseTable> {
   table: TTable;
   summary?: string;
   onSuccess?: () => Promise<void>;
+  byCreator?: boolean;
 }
 export const createDeleteOperation =
-  ({ db }: { db: NodePgDatabase<any> }) =>
+  ({
+    db,
+    getSession,
+  }: {
+    db: NodePgDatabase<any>;
+    getSession: (req: NextRequest) => Promise<{ userId?: string } | undefined>;
+  }) =>
   <TTable extends BaseTable>({
     table,
     summary,
     onSuccess,
+    byCreator = true,
   }: DeleteOperationOptions<TTable>) =>
     routeOperation({
       method: "DELETE",
@@ -31,8 +40,15 @@ export const createDeleteOperation =
         contentType: "application/json",
       })
       .handler(async (req) => {
-        const { id } = await req.json();
-        const data = await createDeleteAction({ table, db })(id);
+        const body: {
+          id: string;
+          creatorId?: string;
+        } = await req.json();
+        if (byCreator) {
+          const { userId } = (await getSession(req)) || {};
+          body.creatorId = userId;
+        }
+        const data = await createDeleteAction({ table, db })(body);
         await onSuccess?.();
         return TypedNextResponse.json(data, {
           status: 200,

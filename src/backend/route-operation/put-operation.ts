@@ -16,6 +16,7 @@ export interface PutOperationOptions<
   summary?: string;
   setBody?: (req: NextRequest) => Promise<Partial<z.infer<T>>>;
   onSuccess?: (data: z.infer<T>) => Promise<z.infer<T>>;
+  byCreator?: boolean;
 }
 
 export const createPutOperation =
@@ -32,6 +33,7 @@ export const createPutOperation =
     summary,
     setBody,
     onSuccess,
+    byCreator = true,
   }: PutOperationOptions<T, TTable>) =>
     routeOperation({
       method: "PUT",
@@ -54,10 +56,13 @@ export const createPutOperation =
           bodySchema,
           table,
           db,
-        })({
-          ...body,
-          editorId: userId,
-        });
+        })(
+          {
+            ...body,
+            editorId: userId,
+          },
+          { byCreator },
+        );
         if (onSuccess) {
           data = await onSuccess(data);
         }
