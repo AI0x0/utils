@@ -14,6 +14,9 @@ export interface PostOperationOptions<
   setBody?: (req: NextRequest) => Promise<Partial<z.infer<T>>>;
   summary?: string;
   onSuccess?: (data: z.infer<T>) => Promise<z.infer<T>>;
+  onError?: (
+    error: Error,
+  ) => Promise<ReturnType<(typeof TypedNextResponse)["json"]> | undefined>;
   table: TTable;
 }
 
@@ -31,6 +34,7 @@ export const createPostOperation =
     summary,
     table,
     onSuccess,
+    onError,
   }: PostOperationOptions<T, TTable>) =>
     routeOperation({
       method: "POST",
@@ -51,17 +55,26 @@ export const createPostOperation =
         },
       ])
       .handler(async (req) => {
-        const { userId } = (await getSession(req)) || {};
-        const body = Object.assign(
-          await req.json(),
-          (await setBody?.(req)) || {},
-        );
-        let [data] = await createPostAction({ bodySchema, db, table })({
-          ...body,
-          creatorId: userId,
-        });
-        if (onSuccess) {
-          data = await onSuccess(data);
+        try {
+          const { userId } = (await getSession(req)) || {};
+          const body = Object.assign(
+            await req.json(),
+            (await setBody?.(req)) || {},
+          );
+          let [data] = await createPostAction({ bodySchema, db, table })({
+            ...body,
+            creatorId: userId,
+          });
+          if (onSuccess) {
+            data = await onSuccess(data);
+          }
+          return TypedNextResponse.json(data, { status: 200 });
+        } catch (e) {
+          const response = await onError?.(e as Error);
+          if (response) {
+            return response as any;
+          } else {
+            throw e;
+          }
         }
-        return TypedNextResponse.json(data, { status: 200 });
       }) as any;
