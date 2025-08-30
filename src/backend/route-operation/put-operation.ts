@@ -8,14 +8,16 @@ import { NextRequest } from "next/server";
 import { BaseTable } from "@/backend/types";
 
 export interface PutOperationOptions<
-  T extends ZodSchema,
+  IB extends ZodSchema,
+  OB extends ZodSchema,
   TTable extends PgTable,
 > {
-  bodySchema: T;
+  bodySchema: IB;
+  outputBodySchema?: OB;
   table: TTable;
   summary?: string;
-  setBody?: (req: NextRequest) => Promise<Partial<z.infer<T>>>;
-  onSuccess?: (data: z.infer<T>) => Promise<z.infer<T>>;
+  setBody?: (req: NextRequest) => Promise<Partial<z.infer<IB>>>;
+  onSuccess?: (data: z.infer<OB>) => Promise<z.infer<OB>>;
   byCreator?: boolean;
 }
 
@@ -27,14 +29,15 @@ export const createPutOperation =
     getSession: (req: NextRequest) => Promise<{ userId?: string } | undefined>;
     db: NodePgDatabase<any>;
   }) =>
-  <T extends ZodSchema, TTable extends BaseTable>({
+  <IB extends ZodSchema, OB extends ZodSchema, TTable extends BaseTable>({
     bodySchema,
+    outputBodySchema,
     table,
     summary,
     setBody,
     onSuccess,
     byCreator = true,
-  }: PutOperationOptions<T, TTable>) =>
+  }: PutOperationOptions<IB, OB, TTable>) =>
     routeOperation({
       method: "PUT",
       openApiOperation: {
@@ -46,6 +49,13 @@ export const createPutOperation =
         body: bodySchema,
         contentType: "application/json",
       })
+      .outputs([
+        {
+          body: outputBodySchema || z.void(),
+          status: 200,
+          contentType: "application/json",
+        },
+      ])
       .handler(async (req) => {
         const { userId } = (await getSession(req)) || {};
         const body = Object.assign(

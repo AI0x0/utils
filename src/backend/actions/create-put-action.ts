@@ -34,10 +34,11 @@ export function createPutAction<T extends ZodSchema, TTable extends BaseTable>({
         throw Error("未找到编辑对象，或没有权限");
       }
     }
-    return db
+    const [data] = await db
       .update(table)
       .set(transformBody(body))
       .where(eq(table.id, body.id))
       .returning();
+    return data;
   };
 }

@@ -7,13 +7,15 @@ import { createPostAction } from "../actions";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 
 export interface PostOperationOptions<
-  T extends ZodSchema,
+  IB extends ZodSchema,
+  OB extends ZodSchema,
   TTable extends PgTable,
 > {
-  bodySchema: T;
-  setBody?: (req: NextRequest) => Promise<Partial<z.infer<T>>>;
+  bodySchema: IB;
+  outputBodySchema: IB;
+  setBody?: (req: NextRequest) => Promise<Partial<z.infer<IB>>>;
   summary?: string;
-  onSuccess?: (data: z.infer<T>) => Promise<z.infer<T>>;
+  onSuccess?: (data: z.infer<OB>) => Promise<z.infer<OB>>;
   onError?: (
     error: Error,
   ) => Promise<ReturnType<(typeof TypedNextResponse)["json"]> | undefined>;
@@ -28,14 +30,15 @@ export const createPostOperation =
     db: NodePgDatabase<any>;
     getSession: (req: NextRequest) => Promise<{ userId?: string } | undefined>;
   }) =>
-  <T extends ZodSchema, TTable extends PgTable>({
+  <IB extends ZodSchema, OB extends ZodSchema, TTable extends PgTable>({
     bodySchema,
+    outputBodySchema,
     setBody,
     summary,
     table,
     onSuccess,
     onError,
-  }: PostOperationOptions<T, TTable>) =>
+  }: PostOperationOptions<IB, OB, TTable>) =>
     routeOperation({
       method: "POST",
       openApiOperation: {
@@ -49,7 +52,7 @@ export const createPostOperation =
       })
       .outputs([
         {
-          body: z.object({ id: z.string() }),
+          body: outputBodySchema || z.object({ id: z.string() }),
           contentType: "application/json",
           status: 200,
         },
