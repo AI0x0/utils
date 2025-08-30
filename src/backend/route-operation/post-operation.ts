@@ -12,7 +12,7 @@ export interface PostOperationOptions<
   TTable extends PgTable,
 > {
   bodySchema: IB;
-  outputBodySchema: IB;
+  outputBodySchema?: IB;
   setBody?: (req: NextRequest) => Promise<Partial<z.infer<IB>>>;
   summary?: string;
   onSuccess?: (data: z.infer<OB>) => Promise<z.infer<OB>>;
