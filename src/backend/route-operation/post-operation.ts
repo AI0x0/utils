@@ -65,8 +65,8 @@ export const createPostOperation =
             (await setBody?.(req)) || {},
           );
           let [data] = await createPostAction({ bodySchema, db, table })({
-            ...body,
             creatorId: userId,
+            ...body,
           });
           if (onSuccess) {
             data = await onSuccess(data);

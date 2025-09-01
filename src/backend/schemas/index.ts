@@ -92,15 +92,21 @@ export const createTableSchema = <
     table as any,
     refineSchema,
   ) as BuildSchema<any, any, any>;
+  // 去掉基础的字段的table
+  const insertTable = pgTable(name, columns);
+  const updateTable = pgTable(name, {
+    id: uuid(),
+    ...columns,
+  });
   return {
     table,
     selectSchema,
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    insertSchema: createInsertSchema(table, refineSchema),
+    insertSchema: createInsertSchema(insertTable, refineSchema),
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    updateSchema: createUpdateSchema(table, {
+    updateSchema: createUpdateSchema(updateTable, {
       id: z.string(),
       ...refineSchema,
     }),

@@ -68,8 +68,8 @@ export const createPutOperation =
           db,
         })(
           {
-            ...body,
             editorId: userId,
+            ...body,
           },
           { byCreator },
         );
