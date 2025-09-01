@@ -24,6 +24,9 @@ export interface PutOperationOptions<
     req: TypedNextRequest<"PUT", "application/json", z.infer<IB>>,
   ) => Promise<Partial<z.infer<IB>>>;
   onSuccess?: (data: z.infer<OB>) => Promise<z.infer<OB>>;
+  onError?: (
+    error: Error,
+  ) => Promise<ReturnType<(typeof TypedNextResponse)["json"]> | undefined>;
   byCreator?: boolean;
 }
 
@@ -43,6 +46,7 @@ export const createPutOperation =
     setBody,
     onSuccess,
     byCreator = true,
+    onError,
   }: PutOperationOptions<IB, OB, TTable>) =>
     routeOperation({
       method: "PUT",
@@ -63,24 +67,33 @@ export const createPutOperation =
         },
       ])
       .handler(async (req) => {
-        const { userId } = (await getSession(req)) || {};
-        const body = Object.assign(
-          await req.json(),
-          (await setBody?.(req)) || {},
-        );
-        let data = await createPutAction({
-          bodySchema,
-          table,
-          db,
-        })(
-          {
-            editorId: userId,
-            ...body,
-          },
-          { byCreator },
-        );
-        if (onSuccess) {
-          data = await onSuccess(data);
+        try {
+          const { userId } = (await getSession(req)) || {};
+          const body = Object.assign(
+            await req.json(),
+            (await setBody?.(req)) || {},
+          );
+          let data = await createPutAction({
+            bodySchema,
+            table,
+            db,
+          })(
+            {
+              editorId: userId,
+              ...body,
+            },
+            { byCreator },
+          );
+          if (onSuccess) {
+            data = await onSuccess(data);
+          }
+          return TypedNextResponse.json(data, { status: 200 });
+        } catch (e) {
+          const response = await onError?.(e as Error);
+          if (response) {
+            return response as any;
+          } else {
+            throw e;
+          }
         }
-        return TypedNextResponse.json(data, { status: 200 });
       }) as any;
