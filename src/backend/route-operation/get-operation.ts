@@ -23,6 +23,9 @@ export interface GetOperationOptions<
     req: TypedNextRequest<"GET", "application/json", unknown, z.infer<Q>>,
   ) => Promise<Record<string, any>>;
   onSuccess?: (data: z.infer<T>) => Promise<z.infer<T>>;
+  onError?: (
+    error: Error,
+  ) => Promise<ReturnType<(typeof TypedNextResponse)["json"]> | undefined>;
   summary?: string;
   table: TTable;
   byCreator?: boolean;
@@ -45,6 +48,7 @@ export const createGetOperation =
     setParams,
     jsonArrayFields,
     onSuccess,
+    onError,
     byCreator = true,
   }: GetOperationOptions<T, Q, TTable>) =>
     routeOperation({
@@ -65,27 +69,36 @@ export const createGetOperation =
         },
       ])
       .handler(async (req) => {
-        const params = (await setParams?.(req)) || {};
-        if (byCreator) {
-          const { userId } = (await getSession(req)) || {};
-          params.creatorId = userId;
-        }
+        try {
+          const params = (await setParams?.(req)) || {};
+          if (byCreator) {
+            const { userId } = (await getSession(req)) || {};
+            params.creatorId = userId;
+          }
 
-        let result =
-          (await createGetAction({
-            bodySchema,
-            db,
-            jsonArrayFields,
-            relations,
-            table,
-          })(
-            Object.assign(
-              Object.fromEntries(new URL(req.url).searchParams),
-              params,
-            ) as any,
-          )) || {};
-        if (onSuccess) {
-          result = await onSuccess(result);
+          let result =
+            (await createGetAction({
+              bodySchema,
+              db,
+              jsonArrayFields,
+              relations,
+              table,
+            })(
+              Object.assign(
+                Object.fromEntries(new URL(req.url).searchParams),
+                params,
+              ) as any,
+            )) || {};
+          if (onSuccess) {
+            result = await onSuccess(result);
+          }
+          return TypedNextResponse.json(result, { status: 200 });
+        } catch (e) {
+          const response = await onError?.(e as Error);
+          if (response) {
+            return response as any;
+          } else {
+            throw e;
+          }
         }
-        return TypedNextResponse.json(result, { status: 200 });
       }) as any;

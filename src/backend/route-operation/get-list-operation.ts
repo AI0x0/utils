@@ -33,6 +33,9 @@ export interface GetListOperationOptions<
     data: z.infer<T>[];
     total: number;
   }>;
+  onError?: (
+    error: Error,
+  ) => Promise<ReturnType<(typeof TypedNextResponse)["json"]> | undefined>;
 }
 
 export const createGetListOperation =
@@ -52,6 +55,7 @@ export const createGetListOperation =
     jsonArrayFields,
     setParams,
     onSuccess,
+    onError,
     byCreator = true,
   }: GetListOperationOptions<T, Q, TTable>) =>
     routeOperation({
@@ -72,28 +76,37 @@ export const createGetListOperation =
         },
       ])
       .handler(async (req) => {
-        const params = (await setParams?.(req)) || {};
-        if (byCreator) {
-          const { userId } = (await getSession(req)) || {};
-          params.creatorId = userId;
+        try {
+          const params = (await setParams?.(req)) || {};
+          if (byCreator) {
+            const { userId } = (await getSession(req)) || {};
+            params.creatorId = userId;
+          }
+
+          let result = await createGetListAction({
+            bodySchema,
+            db,
+            jsonArrayFields,
+            relations,
+            table,
+          })(
+            Object.assign(
+              Object.fromEntries(new URL(req.url).searchParams),
+              params,
+            ),
+          );
+
+          if (onSuccess) {
+            result = await onSuccess(result);
+          }
+
+          return TypedNextResponse.json(result, { status: 200 });
+        } catch (e) {
+          const response = await onError?.(e as Error);
+          if (response) {
+            return response as any;
+          } else {
+            throw e;
+          }
         }
-
-        let result = await createGetListAction({
-          bodySchema,
-          db,
-          jsonArrayFields,
-          relations,
-          table,
-        })(
-          Object.assign(
-            Object.fromEntries(new URL(req.url).searchParams),
-            params,
-          ),
-        );
-
-        if (onSuccess) {
-          result = await onSuccess(result);
-        }
-
-        return TypedNextResponse.json(result, { status: 200 });
       }) as any;

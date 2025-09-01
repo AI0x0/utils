@@ -10,6 +10,9 @@ export interface DeleteOperationOptions<TTable extends BaseTable> {
   table: TTable;
   summary?: string;
   onSuccess?: () => Promise<void>;
+  onError?: (
+    error: Error,
+  ) => Promise<ReturnType<(typeof TypedNextResponse)["json"]> | undefined>;
   byCreator?: boolean;
 }
 export const createDeleteOperation =
@@ -24,6 +27,7 @@ export const createDeleteOperation =
     table,
     summary,
     onSuccess,
+    onError,
     byCreator = true,
   }: DeleteOperationOptions<TTable>) =>
     routeOperation({
@@ -40,17 +44,26 @@ export const createDeleteOperation =
         contentType: "application/json",
       })
       .handler(async (req) => {
-        const body: {
-          id: string;
-          creatorId?: string;
-        } = await req.json();
-        if (byCreator) {
-          const { userId } = (await getSession(req)) || {};
-          body.creatorId = userId;
+        try {
+          const body: {
+            id: string;
+            creatorId?: string;
+          } = await req.json();
+          if (byCreator) {
+            const { userId } = (await getSession(req)) || {};
+            body.creatorId = userId;
+          }
+          const data = await createDeleteAction({ table, db })(body);
+          await onSuccess?.();
+          return TypedNextResponse.json(data, {
+            status: 200,
+          });
+        } catch (e) {
+          const response = await onError?.(e as Error);
+          if (response) {
+            return response as any;
+          } else {
+            throw e;
+          }
         }
-        const data = await createDeleteAction({ table, db })(body);
-        await onSuccess?.();
-        return TypedNextResponse.json(data, {
-          status: 200,
-        });
       }) as any;
