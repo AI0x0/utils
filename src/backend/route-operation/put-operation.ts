@@ -1,6 +1,10 @@
 import { z, ZodSchema } from "zod";
 import { PgTable } from "drizzle-orm/pg-core";
-import { routeOperation, TypedNextResponse } from "next-rest-framework";
+import {
+  routeOperation,
+  TypedNextRequest,
+  TypedNextResponse,
+} from "next-rest-framework";
 import getTableName from "@/backend/route-operation/get-table-name";
 import { createPutAction } from "@/backend/actions";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
@@ -16,7 +20,9 @@ export interface PutOperationOptions<
   outputBodySchema?: OB;
   table: TTable;
   summary?: string;
-  setBody?: (req: NextRequest) => Promise<Partial<z.infer<IB>>>;
+  setBody?: (
+    req: TypedNextRequest<"PUT", "application/json", z.infer<IB>>,
+  ) => Promise<Partial<z.infer<IB>>>;
   onSuccess?: (data: z.infer<OB>) => Promise<z.infer<OB>>;
   byCreator?: boolean;
 }

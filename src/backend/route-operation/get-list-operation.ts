@@ -1,6 +1,10 @@
 import { z, ZodSchema } from "zod";
 import { NextRequest } from "next/server";
-import { routeOperation, TypedNextResponse } from "next-rest-framework";
+import {
+  routeOperation,
+  TypedNextRequest,
+  TypedNextResponse,
+} from "next-rest-framework";
 import getTableName from "./get-table-name";
 import { listBodySchema } from "@/backend/schemas";
 import { createGetListAction } from "@/backend/actions";
@@ -16,7 +20,9 @@ export interface GetListOperationOptions<
   jsonArrayFields?: string[];
   querySchema: Q;
   relations?: GetListRelations;
-  setParams?: (req: NextRequest) => Promise<Record<string, unknown>>;
+  setParams?: (
+    req: TypedNextRequest<"GET", "application/json", unknown, z.infer<Q>>,
+  ) => Promise<Record<string, unknown>>;
   byCreator?: boolean;
   summary?: string;
   table: TTable;

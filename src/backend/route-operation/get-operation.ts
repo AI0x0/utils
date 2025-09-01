@@ -1,6 +1,10 @@
 import { z, ZodSchema } from "zod";
 import { NextRequest } from "next/server";
-import { routeOperation, TypedNextResponse } from "next-rest-framework";
+import {
+  routeOperation,
+  TypedNextRequest,
+  TypedNextResponse,
+} from "next-rest-framework";
 import getTableName from "./get-table-name";
 import { createGetAction } from "../actions";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
@@ -15,7 +19,9 @@ export interface GetOperationOptions<
   jsonArrayFields?: string[];
   querySchema: Q;
   relations?: GetListRelations;
-  setParams?: (req: NextRequest) => Promise<Record<string, any>>;
+  setParams?: (
+    req: TypedNextRequest<"GET", "application/json", unknown, z.infer<Q>>,
+  ) => Promise<Record<string, any>>;
   onSuccess?: (data: z.infer<T>) => Promise<z.infer<T>>;
   summary?: string;
   table: TTable;

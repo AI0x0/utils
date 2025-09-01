@@ -1,7 +1,11 @@
 import { z, ZodSchema } from "zod";
 import { PgTable } from "drizzle-orm/pg-core";
 import { NextRequest } from "next/server";
-import { routeOperation, TypedNextResponse } from "next-rest-framework";
+import {
+  routeOperation,
+  TypedNextRequest,
+  TypedNextResponse,
+} from "next-rest-framework";
 import getTableName from "./get-table-name";
 import { createPostAction } from "../actions";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
@@ -13,7 +17,9 @@ export interface PostOperationOptions<
 > {
   bodySchema: IB;
   outputBodySchema?: IB;
-  setBody?: (req: NextRequest) => Promise<Partial<z.infer<IB>>>;
+  setBody?: (
+    req: TypedNextRequest<"POST", "application/json", z.infer<IB>>,
+  ) => Promise<Partial<z.infer<IB>>>;
   summary?: string;
   onSuccess?: (data: z.infer<OB>) => Promise<z.infer<OB>>;
   onError?: (
