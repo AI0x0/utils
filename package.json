@@ -21,7 +21,8 @@
   "types": "./lib/index.d.ts",
   "files": [
     "lib",
-    "es"
+    "es",
+    "SKILL.md"
   ],
   "scripts": {
     "build": "node scripts/build.mjs",
