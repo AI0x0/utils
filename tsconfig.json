@@ -20,10 +20,9 @@
       }
     ],
     "paths": {
-      "@/*": ["src/*"],
-      "next-rest-framework": ["src/__shims__/next-rest-framework.d.ts"]
+      "@/*": ["src/*"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "src/__shims__"]
 }

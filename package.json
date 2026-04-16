@@ -24,7 +24,7 @@
     "es"
   ],
   "scripts": {
-    "build": "father build",
+    "build": "node scripts/build.mjs",
     "build:watch": "father dev",
     "docs:build": "dumi build",
     "docs:dev": "dumi dev",
@@ -72,7 +72,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
     "next": "^16.2.4",
-    "next-rest-framework": "link:../next-rest-framework/packages/next-rest-framework",
+    "next-rest-framework": "github:mushan0x0/next-rest-framework#pkg",
     "prettier": "^3.8.3",
     "pretty-quick": "^4.2.2",
     "react": "^19.2.5",

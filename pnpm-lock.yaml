@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  next-rest-framework: link:../next-rest-framework/packages/next-rest-framework
+  next-rest-framework: github:mushan0x0/next-rest-framework#pkg
 
 importers:
   .:
@@ -89,8 +89,8 @@ importers:
         specifier: ^16.2.4
         version: 16.2.4(@babel/core@7.29.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(sass@1.54.0)
       next-rest-framework:
-        specifier: link:../next-rest-framework/packages/next-rest-framework
-        version: link:../next-rest-framework/packages/next-rest-framework
+        specifier: github:mushan0x0/next-rest-framework#pkg
+        version: https://codeload.github.com/mushan0x0/next-rest-framework/tar.gz/44b1f81c9ed01a97504cba0fc84020d6f927a4b0
       prettier:
         specifier: ^3.8.3
         version: 3.8.3
@@ -3084,6 +3084,13 @@ packages:
         integrity: sha512-54/JRvkLIzzDWshCWfuhadfrfZVPiElY8Fcgmg1HroEly/EDSszzhBAsarCux+D/kOslTRquNzuyGSmUSTTHGg==,
       }
 
+  "@noble/hashes@1.8.0":
+    resolution:
+      {
+        integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==,
+      }
+    engines: { node: ^14.21.3 || >=16 }
+
   "@nodelib/fs.scandir@2.1.5":
     resolution:
       {
@@ -3153,6 +3160,12 @@ packages:
         integrity: sha512-xhfYPXoV5Dy4UkY0D+v2KkwvnDfiA/8Mt3sWCGI/hM03NsYIH8ZaG6QzS9x7pje5vHZBZJ2v6VRFVTWACnqcmQ==,
       }
     engines: { node: ^16.14.0 || >=18.0.0 }
+
+  "@paralleldrive/cuid2@2.3.1":
+    resolution:
+      {
+        integrity: sha512-XO7cAxhnTZl0Yggq6jOgjiOHhbgcO4NqFqwSmQpjK3b6TEE6Uj/jfSk6wzYyemh3+I0sHirKSetjQwn5cZktFw==,
+      }
 
   "@parcel/watcher-android-arm64@2.5.6":
     resolution:
@@ -6557,6 +6570,12 @@ packages:
       }
     engines: { node: ">=0.10.0" }
 
+  asap@2.0.6:
+    resolution:
+      {
+        integrity: sha512-BSHWgDSAiKs50o2Re8ppvp3seVHXSRM44cdSsT9FfNEUUZLOGWVCsiWaRPWM1Znn+mqZ1OfVZ3z3DWEzSp7hRA==,
+      }
+
   asn1.js@4.10.1:
     resolution:
       {
@@ -7368,6 +7387,13 @@ packages:
       {
         integrity: sha512-Fu4hJdvzeylCfQPp9SGWidpzrMs7tTrlu6Vb8XGaRGck8QSNZJJp538Wrb60Lax4fPwR64ViY468OIUTbRlGZg==,
       }
+
+  commander@10.0.1:
+    resolution:
+      {
+        integrity: sha512-y4Mg2tXshplEbSGzx7amzPwKKOCGuoSRP/CjEdwwk0FOGlUbq6lKuoyDZTNZkmxHdJtp54hdfY/JUrdL7Xfdug==,
+      }
+    engines: { node: ">=14" }
 
   commander@14.0.3:
     resolution:
@@ -8353,6 +8379,12 @@ packages:
     resolution:
       {
         integrity: sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA==,
+      }
+
+  dezalgo@1.0.4:
+    resolution:
+      {
+        integrity: sha512-rXSP0bf+5n0Qonsb+SVVfNfIsimO4HEtmnIpPHY8Q1UCzKlQrDMfdobr8nJOOsRgWCyMRqeSBQzmWUMq7zvVig==,
       }
 
   diff@5.2.2:
@@ -9761,6 +9793,13 @@ packages:
         integrity: sha512-buewHzMvYL29jdeQTVILecSaZKnt/RJWjoZCF5OW60Z67/GmSLBkOFM7qh1PI3zFNtJbaZL5eQu1vLfazOwj4g==,
       }
     engines: { node: ">=12.20.0" }
+
+  formidable@3.5.4:
+    resolution:
+      {
+        integrity: sha512-YikH+7CUTOtP44ZTnUhR7Ic2UASBPOqmaRkRKxRbywPTe5VxF7RRCck4af9wutiZ/QKM5nME9Bie2fFaPz5Gug==,
+      }
+    engines: { node: ">=14.0.0" }
 
   forwarded@0.2.0:
     resolution:
@@ -13117,6 +13156,14 @@ packages:
         integrity: sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==,
       }
 
+  next-rest-framework@https://codeload.github.com/mushan0x0/next-rest-framework/tar.gz/44b1f81c9ed01a97504cba0fc84020d6f927a4b0:
+    resolution:
+      {
+        tarball: https://codeload.github.com/mushan0x0/next-rest-framework/tar.gz/44b1f81c9ed01a97504cba0fc84020d6f927a4b0,
+      }
+    version: 6.1.1
+    hasBin: true
+
   next@16.2.4:
     resolution:
       {
@@ -14306,6 +14353,14 @@ packages:
     peerDependenciesMeta:
       prettier:
         optional: true
+
+  prettier@3.0.2:
+    resolution:
+      {
+        integrity: sha512-o2YR9qtniXvwEZlOKbveKfDQVyqxbEIWn48Z8m3ZJjBjcCmUy3xZGIv+7AkaeuaTr6yPXJjwv07ZWlsWbEy1rQ==,
+      }
+    engines: { node: ">=14" }
+    hasBin: true
 
   prettier@3.8.3:
     resolution:
@@ -19751,6 +19806,8 @@ snapshots:
     dependencies:
       eslint-scope: 5.1.1
 
+  "@noble/hashes@1.8.0": {}
+
   "@nodelib/fs.scandir@2.1.5":
     dependencies:
       "@nodelib/fs.stat": 2.0.5
@@ -19816,6 +19873,10 @@ snapshots:
   "@npmcli/promise-spawn@7.0.2":
     dependencies:
       which: 4.0.0
+
+  "@paralleldrive/cuid2@2.3.1":
+    dependencies:
+      "@noble/hashes": 1.8.0
 
   "@parcel/watcher-android-arm64@2.5.6":
     optional: true
@@ -22363,6 +22424,8 @@ snapshots:
 
   arrify@1.0.1: {}
 
+  asap@2.0.6: {}
+
   asn1.js@4.10.1:
     dependencies:
       bn.js: 4.12.3
@@ -22911,6 +22974,8 @@ snapshots:
   comlink@4.4.2: {}
 
   comma-separated-tokens@2.0.3: {}
+
+  commander@10.0.1: {}
 
   commander@14.0.3: {}
 
@@ -23495,6 +23560,11 @@ snapshots:
   devlop@1.1.0:
     dependencies:
       dequal: 2.0.3
+
+  dezalgo@1.0.4:
+    dependencies:
+      asap: 2.0.6
+      wrappy: 1.0.2
 
   diff@5.2.2: {}
 
@@ -24765,6 +24835,12 @@ snapshots:
   formdata-polyfill@4.0.10:
     dependencies:
       fetch-blob: 3.2.0
+
+  formidable@3.5.4:
+    dependencies:
+      "@paralleldrive/cuid2": 2.3.1
+      dezalgo: 1.0.4
+      once: 1.4.0
 
   forwarded@0.2.0: {}
 
@@ -27273,6 +27349,15 @@ snapshots:
 
   neo-async@2.6.2: {}
 
+  next-rest-framework@https://codeload.github.com/mushan0x0/next-rest-framework/tar.gz/44b1f81c9ed01a97504cba0fc84020d6f927a4b0:
+    dependencies:
+      chalk: 4.1.2
+      commander: 10.0.1
+      formidable: 3.5.4
+      lodash: 4.18.1
+      prettier: 3.0.2
+      qs: 6.15.1
+
   next@16.2.4(@babel/core@7.29.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(sass@1.54.0):
     dependencies:
       "@next/env": 16.2.4
@@ -28062,6 +28147,8 @@ snapshots:
       synckit: 0.8.5
     optionalDependencies:
       prettier: 3.8.3
+
+  prettier@3.0.2: {}
 
   prettier@3.8.3: {}
 
