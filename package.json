@@ -31,7 +31,10 @@
     "prepare": "husky install",
     "prepublishOnly": "npm run build",
     "release": "semantic-release",
-    "start": "npm run docs:dev"
+    "start": "npm run docs:dev",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest"
   },
   "lint-staged": {
     "*": [
@@ -48,6 +51,7 @@
     "@types/react": "^19.0.12",
     "@types/react-dom": "^19.0.4",
     "@typescript-eslint/eslint-plugin": "^8.32.0",
+    "@vitest/coverage-v8": "^1.6.1",
     "antd": "^5.24.5",
     "babel-plugin-antd-style": "^1.0.4",
     "clean-package": "^2.2.0",
@@ -75,6 +79,7 @@
     "tsc-files": "^1.1.4",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",
+    "vitest": "^1.6.1",
     "zod": "^3.24.4"
   },
   "publishConfig": {
