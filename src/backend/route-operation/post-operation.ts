@@ -63,12 +63,18 @@ export const createPostOperation =
           status: 200,
         },
       ])
-      .handler(async (req: NextRequest) => {
+      .handler(async (req) => {
         try {
           const { userId } = (await getSession(req)) || {};
           const body = Object.assign(
             await req.json(),
-            (await setBody?.(req)) || {},
+            (await setBody?.(
+              req as unknown as TypedNextRequest<
+                "POST",
+                "application/json",
+                z.infer<IB>
+              >,
+            )) || {},
           );
           const [raw] = await createPostAction({ bodySchema, db, table })({
             creatorId: userId,
@@ -77,7 +83,7 @@ export const createPostOperation =
           const data = onSuccess
             ? await onSuccess(raw as unknown as z.infer<OB>)
             : (raw as unknown as z.infer<OB>);
-          return TypedNextResponse.json(data, { status: 200 });
+          return TypedNextResponse.json(data as z.infer<OB>, { status: 200 });
         } catch (e) {
           const response = await onError?.(e as Error);
           if (response) {

@@ -34,7 +34,7 @@ describe("transformBody", () => {
   it("日期值转换正确", () => {
     const dateStr = "2024-03-15T12:00:00Z";
     const result = transformBody({ accessedAt: dateStr });
-    expect(result.accessedAt.toISOString()).toBe(
+    expect((result.accessedAt as unknown as Date).toISOString()).toBe(
       new Date(dateStr).toISOString(),
     );
   });

@@ -59,7 +59,9 @@ export const createGetOperation =
       },
     })
       .input({
-        query: querySchema,
+        query: querySchema as unknown as z.ZodType<
+          Record<string, string | string[]>
+        >,
       })
       .outputs([
         {
@@ -68,10 +70,17 @@ export const createGetOperation =
           status: 200,
         },
       ])
-      .handler(async (req: NextRequest) => {
+      .handler(async (req) => {
         try {
           const params: Record<string, unknown> =
-            (await setParams?.(req)) || {};
+            (await setParams?.(
+              req as unknown as TypedNextRequest<
+                "GET",
+                "application/json",
+                unknown,
+                z.infer<Q>
+              >,
+            )) || {};
           if (byCreator) {
             const { userId } = (await getSession(req)) || {};
             params.creatorId = userId;
@@ -93,7 +102,7 @@ export const createGetOperation =
           if (onSuccess) {
             result = await onSuccess(result);
           }
-          return TypedNextResponse.json(result, { status: 200 });
+          return TypedNextResponse.json(result as z.infer<T>, { status: 200 });
         } catch (e) {
           const response = await onError?.(e as Error);
           if (response) {

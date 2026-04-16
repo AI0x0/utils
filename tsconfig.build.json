@@ -4,7 +4,8 @@
     "paths": {
       "@/*": ["src/*"],
       "next-rest-framework": ["src/__shims__/next-rest-framework.d.ts"]
-    }
+    },
+    "ignoreDeprecations": "6.0"
   },
   "include": ["**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules", "src/__tests__"]

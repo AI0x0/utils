@@ -43,7 +43,7 @@ export const createDeleteOperation =
         }),
         contentType: "application/json",
       })
-      .handler(async (req: NextRequest) => {
+      .handler(async (req) => {
         try {
           const body: {
             id: string;

@@ -3,6 +3,8 @@ import { z } from "zod";
 import { pgTable, text } from "drizzle-orm/pg-core";
 import { basicFields } from "@/backend/schemas";
 
+type Operation = { _handler: (req: any) => Promise<any> };
+
 // ─── mock next-rest-framework ────────────────────────────────────────────────
 vi.mock("next-rest-framework", () => {
   const makeBuilder = (ctx: any = {}) => ({
@@ -100,7 +102,9 @@ describe("createDeleteOperation", () => {
       table: testTable,
       byCreator: false,
     });
-    const res = await operation._handler(makeReq({ id: "id-1" }));
+    const res = await (operation as unknown as Operation)._handler(
+      makeReq({ id: "id-1" }),
+    );
     expect(res.status).toBe(200);
     expect(getSession).not.toHaveBeenCalled();
   });
@@ -115,7 +119,7 @@ describe("createDeleteOperation", () => {
     });
     // byCreator=true 时内部传 creatorId，createDeleteAction 会先 get 验权
     // 这里 db.select 返回的 rows=[{id:'id-1'}] 可以找到记录，delete 正常执行
-    await operation._handler(makeReq({ id: "id-1" }));
+    await (operation as unknown as Operation)._handler(makeReq({ id: "id-1" }));
     expect(getSession).toHaveBeenCalled();
   });
 
@@ -129,7 +133,7 @@ describe("createDeleteOperation", () => {
       byCreator: false,
       onSuccess,
     });
-    await operation._handler(makeReq({ id: "id-1" }));
+    await (operation as unknown as Operation)._handler(makeReq({ id: "id-1" }));
     expect(onSuccess).toHaveBeenCalled();
   });
 
@@ -140,13 +144,16 @@ describe("createDeleteOperation", () => {
     db.delete = vi.fn(() => {
       throw new Error("db error");
     });
-    const onError = vi.fn(async () => ({ data: null, status: 500 }));
+
+    const onError = vi.fn(async () => ({ data: null, status: 500 })) as any;
     const operation = createDeleteOperation({ db, getSession })({
       table: testTable,
       byCreator: false,
       onError,
     });
-    const res = await operation._handler(makeReq({ id: "id-1" }));
+    const res = await (operation as unknown as Operation)._handler(
+      makeReq({ id: "id-1" }),
+    );
     expect(onError).toHaveBeenCalled();
     expect(res.status).toBe(500);
   });
@@ -162,9 +169,9 @@ describe("createDeleteOperation", () => {
       table: testTable,
       byCreator: false,
     });
-    await expect(operation._handler(makeReq({ id: "id-1" }))).rejects.toThrow(
-      "raw error",
-    );
+    await expect(
+      (operation as unknown as Operation)._handler(makeReq({ id: "id-1" })),
+    ).rejects.toThrow("raw error");
   });
 });
 
@@ -182,7 +189,9 @@ describe("createPostOperation", () => {
       bodySchema,
       table: testTable,
     });
-    const res = await operation._handler(makeReq({ name: "test" }));
+    const res = await (operation as unknown as Operation)._handler(
+      makeReq({ name: "test" }),
+    );
     expect(res.status).toBe(200);
     expect(db.insert).toHaveBeenCalled();
   });
@@ -192,13 +201,15 @@ describe("createPostOperation", () => {
       await import("@/backend/route-operation/post-operation");
     const db = makeDb();
     const bodySchema = z.object({ name: z.string() });
-    const setBody = vi.fn(async () => ({ extra: "value" }));
+    const setBody = vi.fn(async () => ({ extra: "value" })) as never;
     const operation = createPostOperation({ db, getSession })({
       bodySchema,
       table: testTable,
       setBody,
     });
-    await operation._handler(makeReq({ name: "test" }));
+    await (operation as unknown as Operation)._handler(
+      makeReq({ name: "test" }),
+    );
     expect(setBody).toHaveBeenCalled();
   });
 
@@ -213,7 +224,9 @@ describe("createPostOperation", () => {
       table: testTable,
       onSuccess,
     });
-    const res = await operation._handler(makeReq({ name: "test" }));
+    const res = await (operation as unknown as Operation)._handler(
+      makeReq({ name: "test" }),
+    );
     expect(onSuccess).toHaveBeenCalled();
     expect(res.data.extra).toBe(true);
   });
@@ -225,14 +238,17 @@ describe("createPostOperation", () => {
     db.insert = vi.fn(() => {
       throw new Error("fail");
     });
-    const onError = vi.fn(async () => ({ data: null, status: 500 }));
+
+    const onError = vi.fn(async () => ({ data: null, status: 500 })) as any;
     const bodySchema = z.object({ name: z.string() });
     const operation = createPostOperation({ db, getSession })({
       bodySchema,
       table: testTable,
       onError,
     });
-    const res = await operation._handler(makeReq({ name: "x" }));
+    const res = await (operation as unknown as Operation)._handler(
+      makeReq({ name: "x" }),
+    );
     expect(onError).toHaveBeenCalled();
     expect(res.status).toBe(500);
   });
@@ -254,7 +270,7 @@ describe("createGetListOperation", () => {
       querySchema,
       table: testTable,
     });
-    const res = await operation._handler(makeReq());
+    const res = await (operation as unknown as Operation)._handler(makeReq());
     expect(res.status).toBe(200);
   });
 
@@ -271,7 +287,7 @@ describe("createGetListOperation", () => {
       table: testTable,
       onSuccess,
     });
-    const res = await operation._handler(makeReq());
+    const res = await (operation as unknown as Operation)._handler(makeReq());
     expect(onSuccess).toHaveBeenCalled();
     expect(res.data.total).toBe(999);
   });
@@ -283,7 +299,8 @@ describe("createGetListOperation", () => {
     db.select = vi.fn(() => {
       throw new Error("fail");
     });
-    const onError = vi.fn(async () => ({ data: null, status: 500 }));
+
+    const onError = vi.fn(async () => ({ data: null, status: 500 })) as any;
     const bodySchema = z.object({ id: z.string() });
     const querySchema = z.object({});
     const operation = createGetListOperation({ db, getSession })({
@@ -292,7 +309,7 @@ describe("createGetListOperation", () => {
       table: testTable,
       onError,
     });
-    const res = await operation._handler(makeReq());
+    const res = await (operation as unknown as Operation)._handler(makeReq());
     expect(onError).toHaveBeenCalled();
     expect(res.status).toBe(500);
   });
@@ -314,7 +331,9 @@ describe("createGetOperation", () => {
       querySchema,
       table: testTable,
     });
-    const res = await operation._handler(makeReq({}, { id: "id-1" }));
+    const res = await (operation as unknown as Operation)._handler(
+      makeReq({}, { id: "id-1" }),
+    );
     expect(res.status).toBe(200);
   });
 
@@ -331,7 +350,7 @@ describe("createGetOperation", () => {
       table: testTable,
       onSuccess,
     });
-    const res = await operation._handler(makeReq());
+    const res = await (operation as unknown as Operation)._handler(makeReq());
     expect(onSuccess).toHaveBeenCalled();
     expect(res.data.extra).toBe(true);
   });
@@ -343,7 +362,8 @@ describe("createGetOperation", () => {
     db.select = vi.fn(() => {
       throw new Error("fail");
     });
-    const onError = vi.fn(async () => ({ data: null, status: 500 }));
+
+    const onError = vi.fn(async () => ({ data: null, status: 500 })) as any;
     const bodySchema = z.object({ id: z.string() });
     const querySchema = z.object({});
     const operation = createGetOperation({ db, getSession })({
@@ -352,7 +372,7 @@ describe("createGetOperation", () => {
       table: testTable,
       onError,
     });
-    const res = await operation._handler(makeReq());
+    const res = await (operation as unknown as Operation)._handler(makeReq());
     expect(onError).toHaveBeenCalled();
     expect(res.status).toBe(500);
   });
@@ -373,7 +393,7 @@ describe("createPutOperation", () => {
       table: testTable,
       byCreator: false,
     });
-    const res = await operation._handler(
+    const res = await (operation as unknown as Operation)._handler(
       makeReq({ id: "id-1", name: "updated" }),
     );
     expect(res.status).toBe(200);
@@ -385,14 +405,16 @@ describe("createPutOperation", () => {
       await import("@/backend/route-operation/put-operation");
     const db = makeDb();
     const bodySchema = z.object({ id: z.string(), name: z.string() });
-    const setBody = vi.fn(async () => ({ extra: "v" }));
+    const setBody = vi.fn(async () => ({ extra: "v" })) as never;
     const operation = createPutOperation({ db, getSession })({
       bodySchema,
       table: testTable,
       byCreator: false,
       setBody,
     });
-    await operation._handler(makeReq({ id: "id-1", name: "x" }));
+    await (operation as unknown as Operation)._handler(
+      makeReq({ id: "id-1", name: "x" }),
+    );
     expect(setBody).toHaveBeenCalled();
   });
 
@@ -408,7 +430,9 @@ describe("createPutOperation", () => {
       byCreator: false,
       onSuccess,
     });
-    const res = await operation._handler(makeReq({ id: "id-1", name: "x" }));
+    const res = await (operation as unknown as Operation)._handler(
+      makeReq({ id: "id-1", name: "x" }),
+    );
     expect(onSuccess).toHaveBeenCalled();
     expect(res.data.patched).toBe(true);
   });
@@ -420,7 +444,8 @@ describe("createPutOperation", () => {
     db.update = vi.fn(() => {
       throw new Error("fail");
     });
-    const onError = vi.fn(async () => ({ data: null, status: 500 }));
+
+    const onError = vi.fn(async () => ({ data: null, status: 500 })) as any;
     const bodySchema = z.object({ id: z.string(), name: z.string() });
     const operation = createPutOperation({ db, getSession })({
       bodySchema,
@@ -428,7 +453,9 @@ describe("createPutOperation", () => {
       byCreator: false,
       onError,
     });
-    const res = await operation._handler(makeReq({ id: "id-1", name: "x" }));
+    const res = await (operation as unknown as Operation)._handler(
+      makeReq({ id: "id-1", name: "x" }),
+    );
     expect(onError).toHaveBeenCalled();
     expect(res.status).toBe(500);
   });

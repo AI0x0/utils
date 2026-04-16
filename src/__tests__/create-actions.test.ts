@@ -23,7 +23,10 @@ function makeQueryChain(rows: any[]) {
   return chain;
 }
 
-function makeDb(rows = [{ id: "id-1", name: "foo" }], count = "1") {
+function makeDb(
+  rows: Array<Record<string, unknown>> = [{ id: "id-1", name: "foo" }],
+  count = "1",
+) {
   const dataChain = makeQueryChain(rows);
   const countExecute = vi.fn(async () => [{ count }]);
   const countChain: any = {};

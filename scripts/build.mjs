@@ -21,15 +21,18 @@ fs.writeFileSync(backup, original);
 
 const baseCfg = JSON.parse(original);
 const buildCfg = JSON.parse(fs.readFileSync(tsconfigBuild, "utf8"));
+const mergedCompilerOptions = {
+  ...baseCfg.compilerOptions,
+  ...buildCfg.compilerOptions,
+};
+// father 打包用的是 TypeScript 5.4，不认识 ignoreDeprecations=6.0
+delete mergedCompilerOptions.ignoreDeprecations;
 fs.writeFileSync(
   tsconfig,
   JSON.stringify(
     {
       ...baseCfg,
-      compilerOptions: {
-        ...baseCfg.compilerOptions,
-        ...buildCfg.compilerOptions,
-      },
+      compilerOptions: mergedCompilerOptions,
       exclude: buildCfg.exclude ?? baseCfg.exclude,
     },
     null,
