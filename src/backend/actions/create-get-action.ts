@@ -18,7 +18,7 @@ export function createGetAction<T extends ZodSchema, TTable extends BaseTable>({
   relations?: GetListRelations;
   table: TTable;
 }) {
-  return async (params: Partial<z.infer<T>>) => {
+  return async (params: Partial<z.infer<T>> & Record<string, any>) => {
     const fields: SelectedFields = {};
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
@@ -39,7 +39,6 @@ export function createGetAction<T extends ZodSchema, TTable extends BaseTable>({
       table,
     });
 
-    // 执行查询
     const {
       data: [result],
     } = await getListData({
@@ -50,6 +49,6 @@ export function createGetAction<T extends ZodSchema, TTable extends BaseTable>({
       query,
     })();
 
-    return result;
+    return result as z.infer<T> | undefined;
   };
 }

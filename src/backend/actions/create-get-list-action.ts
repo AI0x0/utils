@@ -21,8 +21,8 @@ export function createGetListAction<
   relations?: GetListRelations;
   table: TTable;
 }) {
-  return async (params: Partial<z.infer<T>>) => {
-    const { current, pageSize, ...other } = params;
+  return async (params: Partial<z.infer<T>> & Record<string, any>) => {
+    const { current, pageSize, ...other } = params as Record<string, any>;
     const fields: SelectedFields = {};
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
@@ -43,7 +43,6 @@ export function createGetListAction<
       table,
     });
 
-    // 执行查询
     return getListData({
       bodySchema,
       countQuery,

@@ -60,8 +60,8 @@
     "commitlint": "^20.5.0",
     "cross-env": "^10.1.0",
     "dayjs": "^1.11.20",
-    "drizzle-orm": "^0.38.3",
-    "drizzle-zod": "^0.7.1",
+    "drizzle-orm": "^0.45.2",
+    "drizzle-zod": "^0.8.3",
     "dumi": "^2.4.23",
     "dumi-theme-lobehub": "^5.0.0",
     "eslint": "9",
@@ -71,8 +71,8 @@
     "father": "^4.6.18",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
-    "next": "^15.5.15",
-    "next-rest-framework": "^6.0.7",
+    "next": "^16.2.4",
+    "next-rest-framework": "link:../next-rest-framework/packages/next-rest-framework",
     "prettier": "^3.8.3",
     "pretty-quick": "^4.2.2",
     "react": "^19.2.5",
@@ -82,7 +82,7 @@
     "tsx": "^4.21.0",
     "typescript": "^5.4.2",
     "vitest": "^2.1.9",
-    "zod": "^3.25.76"
+    "zod": "^4.3.6"
   },
   "publishConfig": {
     "access": "public",

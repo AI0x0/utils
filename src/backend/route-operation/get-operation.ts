@@ -68,11 +68,11 @@ export const createGetOperation =
           status: 200,
         },
       ])
-      .handler(async (req) => {
+      .handler(async (req: any) => {
         try {
-          const params = (await setParams?.(req)) || {};
+          const params = (await setParams?.(req)) || ({} as any);
           if (byCreator) {
-            const { userId } = (await getSession(req)) || {};
+            const { userId } = (await getSession(req)) || ({} as any);
             params.creatorId = userId;
           }
 
@@ -88,9 +88,9 @@ export const createGetOperation =
                 Object.fromEntries(new URL(req.url).searchParams),
                 params,
               ) as any,
-            )) || {};
+            )) || ({} as any);
           if (onSuccess) {
-            result = await onSuccess(result);
+            result = (await onSuccess(result as any)) as any;
           }
           return TypedNextResponse.json(result, { status: 200 });
         } catch (e) {

@@ -11,7 +11,10 @@ export function createPostAction<T extends ZodSchema, TTable extends PgTable>({
   db: NodePgDatabase<any>;
   table: TTable;
 }) {
-  return async (body: z.infer<T>): Promise<T["_output"][]> => {
-    return db.insert(table).values(transformBody(body)).returning();
+  return async (body: z.infer<T>): Promise<z.infer<T>[]> => {
+    return db
+      .insert(table)
+      .values(transformBody(body as Record<string, any>))
+      .returning() as any;
   };
 }

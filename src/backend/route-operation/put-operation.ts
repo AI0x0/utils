@@ -66,7 +66,7 @@ export const createPutOperation =
           contentType: "application/json",
         },
       ])
-      .handler(async (req) => {
+      .handler(async (req: any) => {
         try {
           const { userId } = (await getSession(req)) || {};
           const body = Object.assign(
@@ -85,7 +85,7 @@ export const createPutOperation =
             { byCreator },
           );
           if (onSuccess) {
-            data = await onSuccess(data);
+            data = (await onSuccess(data as any)) as any;
           }
           return TypedNextResponse.json(data, { status: 200 });
         } catch (e) {

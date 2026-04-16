@@ -1,4 +1,4 @@
-import { AnyZodObject, z, ZodTypeAny } from "zod";
+import { z, ZodObject, ZodTypeAny } from "zod";
 import {
   PgColumnBuilderBase,
   pgTable,
@@ -14,7 +14,6 @@ import {
   createUpdateSchema,
   NoUnknownKeys,
 } from "drizzle-zod";
-import { BuildSchema } from "drizzle-zod/schema.types.internal";
 
 //============================基本字段============================//
 const timestamptz = (name: string) => timestamp(name, { withTimezone: true });
@@ -33,7 +32,7 @@ export const basicFields = {
 };
 
 //============================列表查询字段============================//
-export const queryListSchema = <Incoming extends AnyZodObject>(
+export const queryListSchema = <Incoming extends ZodObject<any>>(
   schema: Incoming,
 ) =>
   z
@@ -60,7 +59,7 @@ export const createTableSchema = <
   TTableName extends string,
   TColumnsMap extends Record<string, PgColumnBuilderBase>,
   TTable extends Table,
-  TRefine extends BuildRefine<TTable["_"]["columns"]>,
+  TRefine extends BuildRefine<TTable["_"]["columns"], undefined>,
 >({
   name,
   columns,
@@ -88,10 +87,7 @@ export const createTableSchema = <
     extraConfig,
   );
   // 创建基础的schema
-  const selectSchema = createSelectSchema(
-    table as any,
-    refineSchema,
-  ) as BuildSchema<any, any, any>;
+  const selectSchema = createSelectSchema(table as any, refineSchema) as any;
   // 去掉基础的字段的table
   const insertTable = pgTable(name, columns);
   const updateTable = pgTable(name, {
@@ -104,17 +100,14 @@ export const createTableSchema = <
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     insertSchema: createInsertSchema(insertTable, refineSchema),
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    updateSchema: createUpdateSchema(updateTable, {
-      id: z.string(),
-      ...refineSchema,
-    }),
-    querySchema: selectSchema.pick({
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      id: true,
-    }),
+    updateSchema: createUpdateSchema(
+      updateTable as any,
+      {
+        id: z.string(),
+        ...refineSchema,
+      } as any,
+    ),
+    querySchema: selectSchema.pick({ id: true }),
     queryListSchema: queryListSchema(selectSchema.partial()),
     queryListSelectSchema: selectSchema,
   };

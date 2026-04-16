@@ -14,13 +14,13 @@ export function createPutAction<T extends ZodSchema, TTable extends BaseTable>({
   table: TTable;
 }) {
   return async (
-    body: Partial<z.infer<T>>,
+    body: Partial<z.infer<T>> & Record<string, any>,
     {
       byCreator = true,
     }: {
       byCreator?: boolean;
     } = {},
-  ): Promise<T["_output"]> => {
+  ): Promise<z.infer<T>> => {
     if (byCreator) {
       const data = await createGetAction({
         db,
@@ -39,6 +39,6 @@ export function createPutAction<T extends ZodSchema, TTable extends BaseTable>({
       .set(transformBody(body))
       .where(eq(table.id, body.id))
       .returning();
-    return data;
+    return data as z.infer<T>;
   };
 }

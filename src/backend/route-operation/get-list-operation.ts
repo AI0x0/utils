@@ -75,7 +75,7 @@ export const createGetListOperation =
           status: 200,
         },
       ])
-      .handler(async (req) => {
+      .handler(async (req: any) => {
         try {
           const params = (await setParams?.(req)) || {};
           if (byCreator) {
@@ -93,7 +93,7 @@ export const createGetListOperation =
             Object.assign(
               Object.fromEntries(new URL(req.url).searchParams),
               params,
-            ),
+            ) as any,
           );
 
           if (onSuccess) {

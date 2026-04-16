@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  next-rest-framework: link:../next-rest-framework/packages/next-rest-framework
+
 importers:
   .:
     devDependencies:
@@ -50,11 +53,11 @@ importers:
         specifier: ^1.11.20
         version: 1.11.20
       drizzle-orm:
-        specifier: ^0.38.3
-        version: 0.38.3(@types/react@19.2.14)(react@19.2.5)
+        specifier: ^0.45.2
+        version: 0.45.2
       drizzle-zod:
-        specifier: ^0.7.1
-        version: 0.7.1(drizzle-orm@0.38.3(@types/react@19.2.14)(react@19.2.5))(zod@3.25.76)
+        specifier: ^0.8.3
+        version: 0.8.3(drizzle-orm@0.45.2)(zod@4.3.6)
       dumi:
         specifier: ^2.4.23
         version: 2.4.23(@babel/core@7.29.0)(@swc/helpers@0.5.15)(@types/node@25.6.0)(@types/react@19.2.14)(eslint@9.39.4(jiti@2.6.1))(lightningcss@1.22.1)(prettier@3.8.3)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(rollup@3.30.0)(styled-jsx@5.1.6(@babel/core@7.29.0)(react@19.2.5))(stylelint@14.16.1)(terser@5.46.1)(type-fest@3.13.1)(typescript@5.4.2)(webpack@5.106.2)
@@ -83,11 +86,11 @@ importers:
         specifier: ^16.4.0
         version: 16.4.0
       next:
-        specifier: ^15.5.15
-        version: 15.5.15(@babel/core@7.29.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(sass@1.54.0)
+        specifier: ^16.2.4
+        version: 16.2.4(@babel/core@7.29.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(sass@1.54.0)
       next-rest-framework:
-        specifier: ^6.0.7
-        version: 6.0.7(zod@3.25.76)
+        specifier: link:../next-rest-framework/packages/next-rest-framework
+        version: link:../next-rest-framework/packages/next-rest-framework
       prettier:
         specifier: ^3.8.3
         version: 3.8.3
@@ -116,8 +119,8 @@ importers:
         specifier: ^2.1.9
         version: 2.1.9(@types/node@25.6.0)(less@4.6.4)(lightningcss@1.22.1)(sass@1.54.0)(terser@5.46.1)
       zod:
-        specifier: ^3.25.76
-        version: 3.25.76
+        specifier: ^4.3.6
+        version: 4.3.6
 
 packages:
   "@ampproject/remapping@2.3.0":
@@ -2987,10 +2990,10 @@ packages:
         integrity: sha512-ZVWUcfwY4E/yPitQJl481FjFo3K22D6qF0DuFH6Y/nbnE11GY5uguDxZMGXPQ8WQ0128MXQD7TnfHyK4oWoIJQ==,
       }
 
-  "@next/env@15.5.15":
+  "@next/env@16.2.4":
     resolution:
       {
-        integrity: sha512-vcmyu5/MyFzN7CdqRHO3uHO44p/QPCZkuTUXroeUmhNP8bL5PHFEhik22JUazt+CDDoD6EpBYRCaS2pISL+/hg==,
+        integrity: sha512-dKkkOzOSwFYe5RX6y26fZgkSpVAlIOJKQHIiydQcrWH6y/97+RceSOAdjZ14Qa3zLduVUy0TXcn+EiM6t4rPgw==,
       }
 
   "@next/eslint-plugin-next@16.2.4":
@@ -2999,77 +3002,77 @@ packages:
         integrity: sha512-tOX826JJ96gYK/go18sPUgMq9FK1tqxBFfUCEufJb5XIkWFFmpgU7mahJANKGkHs7F41ir3tReJ3Lv5La0RvhA==,
       }
 
-  "@next/swc-darwin-arm64@15.5.15":
+  "@next/swc-darwin-arm64@16.2.4":
     resolution:
       {
-        integrity: sha512-6PvFO2Tzt10GFK2Ro9tAVEtacMqRmTarYMFKAnV2vYMdwWc73xzmDQyAV7SwEdMhzmiRoo7+m88DuiXlJlGeaw==,
+        integrity: sha512-OXTFFox5EKN1Ym08vfrz+OXxmCcEjT4SFMbNRsWZE99dMqt2Kcusl5MqPXcW232RYkMLQTy0hqgAMEsfEd/l2A==,
       }
     engines: { node: ">= 10" }
     cpu: [arm64]
     os: [darwin]
 
-  "@next/swc-darwin-x64@15.5.15":
+  "@next/swc-darwin-x64@16.2.4":
     resolution:
       {
-        integrity: sha512-G+YNV+z6FDZTp/+IdGyIMFqalBTaQSnvAA+X/hrt+eaTRFSznRMz9K7rTmzvM6tDmKegNtyzgufZW0HwVzEqaQ==,
+        integrity: sha512-XhpVnUfmYWvD3YrXu55XdcAkQtOnvaI6wtQa8fuF5fGoKoxIUZ0kWPtcOfqJEWngFF/lOS9l3+O9CcownhiQxQ==,
       }
     engines: { node: ">= 10" }
     cpu: [x64]
     os: [darwin]
 
-  "@next/swc-linux-arm64-gnu@15.5.15":
+  "@next/swc-linux-arm64-gnu@16.2.4":
     resolution:
       {
-        integrity: sha512-eVkrMcVIBqGfXB+QUC7jjZ94Z6uX/dNStbQFabewAnk13Uy18Igd1YZ/GtPRzdhtm7QwC0e6o7zOQecul4iC1w==,
+        integrity: sha512-Mx/tjlNA3G8kg14QvuGAJ4xBwPk1tUHq56JxZ8CXnZwz1Etz714soCEzGQQzVMz4bEnGPowzkV6Xrp6wAkEWOQ==,
       }
     engines: { node: ">= 10" }
     cpu: [arm64]
     os: [linux]
     libc: [glibc]
 
-  "@next/swc-linux-arm64-musl@15.5.15":
+  "@next/swc-linux-arm64-musl@16.2.4":
     resolution:
       {
-        integrity: sha512-RwSHKMQ7InLy5GfkY2/n5PcFycKA08qI1VST78n09nN36nUPqCvGSMiLXlfUmzmpQpF6XeBYP2KRWHi0UW3uNg==,
+        integrity: sha512-iVMMp14514u7Nup2umQS03nT/bN9HurK8ufylC3FZNykrwjtx7V1A7+4kvhbDSCeonTVqV3Txnv0Lu+m2oDXNg==,
       }
     engines: { node: ">= 10" }
     cpu: [arm64]
     os: [linux]
     libc: [musl]
 
-  "@next/swc-linux-x64-gnu@15.5.15":
+  "@next/swc-linux-x64-gnu@16.2.4":
     resolution:
       {
-        integrity: sha512-nplqvY86LakS+eeiuWsNWvfmK8pFcOEW7ZtVRt4QH70lL+0x6LG/m1OpJ/tvrbwjmR8HH9/fH2jzW1GlL03TIg==,
+        integrity: sha512-EZOvm1aQWgnI/N/xcWOlnS3RQBk0VtVav5Zo7n4p0A7UKyTDx047k8opDbXgBpHl4CulRqRfbw3QrX2w5UOXMQ==,
       }
     engines: { node: ">= 10" }
     cpu: [x64]
     os: [linux]
     libc: [glibc]
 
-  "@next/swc-linux-x64-musl@15.5.15":
+  "@next/swc-linux-x64-musl@16.2.4":
     resolution:
       {
-        integrity: sha512-eAgl9NKQ84/sww0v81DQINl/vL2IBxD7sMybd0cWRw6wqgouVI53brVRBrggqBRP/NWeIAE1dm5cbKYoiMlqDQ==,
+        integrity: sha512-h9FxsngCm9cTBf71AR4fGznDEDx1hS7+kSEiIRjq5kO1oXWm07DxVGZjCvk0SGx7TSjlUqhI8oOyz7NfwAdPoA==,
       }
     engines: { node: ">= 10" }
     cpu: [x64]
     os: [linux]
     libc: [musl]
 
-  "@next/swc-win32-arm64-msvc@15.5.15":
+  "@next/swc-win32-arm64-msvc@16.2.4":
     resolution:
       {
-        integrity: sha512-GJVZC86lzSquh0MtvZT+L7G8+jMnJcldloOjA8Kf3wXvBrvb6OGe2MzPuALxFshSm/IpwUtD2mIoof39ymf52A==,
+        integrity: sha512-3NdJV5OXMSOeJYijX+bjaLge3mJBlh4ybydbT4GFoB/2hAojWHtMhl3CYlYoMrjPuodp0nzFVi4Tj2+WaMg+Ow==,
       }
     engines: { node: ">= 10" }
     cpu: [arm64]
     os: [win32]
 
-  "@next/swc-win32-x64-msvc@15.5.15":
+  "@next/swc-win32-x64-msvc@16.2.4":
     resolution:
       {
-        integrity: sha512-nFucjVdwlFqxh/JG3hWSJ4p8+YJV7Ii8aPDuBQULB6DzUF4UNZETXLfEUk+oI2zEznWWULPt7MeuTE6xtK1HSA==,
+        integrity: sha512-kMVGgsqhO5YTYODD9IPGGhA6iprWidQckK3LmPeW08PIFENRmgfb4MjXHO+p//d+ts2rpjvK5gXWzXSMrPl9cw==,
       }
     engines: { node: ">= 10" }
     cpu: [x64]
@@ -3080,13 +3083,6 @@ packages:
       {
         integrity: sha512-54/JRvkLIzzDWshCWfuhadfrfZVPiElY8Fcgmg1HroEly/EDSszzhBAsarCux+D/kOslTRquNzuyGSmUSTTHGg==,
       }
-
-  "@noble/hashes@1.8.0":
-    resolution:
-      {
-        integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==,
-      }
-    engines: { node: ^14.21.3 || >=16 }
 
   "@nodelib/fs.scandir@2.1.5":
     resolution:
@@ -3157,12 +3153,6 @@ packages:
         integrity: sha512-xhfYPXoV5Dy4UkY0D+v2KkwvnDfiA/8Mt3sWCGI/hM03NsYIH8ZaG6QzS9x7pje5vHZBZJ2v6VRFVTWACnqcmQ==,
       }
     engines: { node: ^16.14.0 || >=18.0.0 }
-
-  "@paralleldrive/cuid2@2.3.1":
-    resolution:
-      {
-        integrity: sha512-XO7cAxhnTZl0Yggq6jOgjiOHhbgcO4NqFqwSmQpjK3b6TEE6Uj/jfSk6wzYyemh3+I0sHirKSetjQwn5cZktFw==,
-      }
 
   "@parcel/watcher-android-arm64@2.5.6":
     resolution:
@@ -6567,12 +6557,6 @@ packages:
       }
     engines: { node: ">=0.10.0" }
 
-  asap@2.0.6:
-    resolution:
-      {
-        integrity: sha512-BSHWgDSAiKs50o2Re8ppvp3seVHXSRM44cdSsT9FfNEUUZLOGWVCsiWaRPWM1Znn+mqZ1OfVZ3z3DWEzSp7hRA==,
-      }
-
   asn1.js@4.10.1:
     resolution:
       {
@@ -7384,13 +7368,6 @@ packages:
       {
         integrity: sha512-Fu4hJdvzeylCfQPp9SGWidpzrMs7tTrlu6Vb8XGaRGck8QSNZJJp538Wrb60Lax4fPwR64ViY468OIUTbRlGZg==,
       }
-
-  commander@10.0.1:
-    resolution:
-      {
-        integrity: sha512-y4Mg2tXshplEbSGzx7amzPwKKOCGuoSRP/CjEdwwk0FOGlUbq6lKuoyDZTNZkmxHdJtp54hdfY/JUrdL7Xfdug==,
-      }
-    engines: { node: ">=14" }
 
   commander@14.0.3:
     resolution:
@@ -8378,12 +8355,6 @@ packages:
         integrity: sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA==,
       }
 
-  dezalgo@1.0.4:
-    resolution:
-      {
-        integrity: sha512-rXSP0bf+5n0Qonsb+SVVfNfIsimO4HEtmnIpPHY8Q1UCzKlQrDMfdobr8nJOOsRgWCyMRqeSBQzmWUMq7zvVig==,
-      }
-
   diff@5.2.2:
     resolution:
       {
@@ -8601,10 +8572,10 @@ packages:
       }
     engines: { node: ">=10" }
 
-  drizzle-orm@0.38.3:
+  drizzle-orm@0.45.2:
     resolution:
       {
-        integrity: sha512-w41Y+PquMpSff/QDRGdItG0/aWca+/J3Sda9PPGkTxBtjWQvgU1jxlFBXdjog5tYvTu58uvi3PwR1NuCx0KeZg==,
+        integrity: sha512-kY0BSaTNYWnoDMVoyY8uxmyHjpJW1geOmBMdSSicKo9CIIWkSxMIj2rkeSR51b8KAPB7m+qysjuHme5nKP+E5Q==,
       }
     peerDependencies:
       "@aws-sdk/client-rds-data": ">=3"
@@ -8615,25 +8586,25 @@ packages:
       "@neondatabase/serverless": ">=0.10.0"
       "@op-engineering/op-sqlite": ">=2"
       "@opentelemetry/api": ^1.4.1
-      "@planetscale/database": ">=1"
+      "@planetscale/database": ">=1.13"
       "@prisma/client": "*"
       "@tidbcloud/serverless": "*"
       "@types/better-sqlite3": "*"
       "@types/pg": "*"
-      "@types/react": ">=18"
       "@types/sql.js": "*"
+      "@upstash/redis": ">=1.34.7"
       "@vercel/postgres": ">=0.8.0"
       "@xata.io/client": "*"
       better-sqlite3: ">=7"
       bun-types: "*"
       expo-sqlite: ">=14.0.0"
+      gel: ">=2"
       knex: "*"
       kysely: "*"
       mysql2: ">=2"
       pg: ">=8"
       postgres: ">=3"
       prisma: "*"
-      react: ">=18"
       sql.js: ">=1"
       sqlite3: ">=5"
     peerDependenciesMeta:
@@ -8663,9 +8634,9 @@ packages:
         optional: true
       "@types/pg":
         optional: true
-      "@types/react":
-        optional: true
       "@types/sql.js":
+        optional: true
+      "@upstash/redis":
         optional: true
       "@vercel/postgres":
         optional: true
@@ -8676,6 +8647,8 @@ packages:
       bun-types:
         optional: true
       expo-sqlite:
+        optional: true
+      gel:
         optional: true
       knex:
         optional: true
@@ -8689,21 +8662,19 @@ packages:
         optional: true
       prisma:
         optional: true
-      react:
-        optional: true
       sql.js:
         optional: true
       sqlite3:
         optional: true
 
-  drizzle-zod@0.7.1:
+  drizzle-zod@0.8.3:
     resolution:
       {
-        integrity: sha512-nZzALOdz44/AL2U005UlmMqaQ1qe5JfanvLujiTHiiT8+vZJTBFhj3pY4Vk+L6UWyKFfNmLhk602Hn4kCTynKQ==,
+        integrity: sha512-66yVOuvGhKJnTdiqj1/Xaaz9/qzOdRJADpDa68enqS6g3t0kpNkwNYjUuaeXgZfO/UWuIM9HIhSlJ6C5ZraMww==,
       }
     peerDependencies:
       drizzle-orm: ">=0.36.0"
-      zod: ">=3.0.0"
+      zod: ^3.25.0 || ^4.0.0
 
   dumi-afx-deps@1.0.0-alpha.20:
     resolution:
@@ -9790,13 +9761,6 @@ packages:
         integrity: sha512-buewHzMvYL29jdeQTVILecSaZKnt/RJWjoZCF5OW60Z67/GmSLBkOFM7qh1PI3zFNtJbaZL5eQu1vLfazOwj4g==,
       }
     engines: { node: ">=12.20.0" }
-
-  formidable@3.5.4:
-    resolution:
-      {
-        integrity: sha512-YikH+7CUTOtP44ZTnUhR7Ic2UASBPOqmaRkRKxRbywPTe5VxF7RRCck4af9wutiZ/QKM5nME9Bie2fFaPz5Gug==,
-      }
-    engines: { node: ">=14.0.0" }
 
   forwarded@0.2.0:
     resolution:
@@ -11977,12 +11941,6 @@ packages:
         integrity: sha512-sReKOYJIJf74dhJONhU4e0/shzi1trVbSWDOhKYE5XV2O+H7Sb2Dihwuc7xWxVl+DgFPyTqIN3zMfT9cq5iWDg==,
       }
 
-  lodash@4.17.21:
-    resolution:
-      {
-        integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==,
-      }
-
   lodash@4.17.23:
     resolution:
       {
@@ -13159,19 +13117,12 @@ packages:
         integrity: sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==,
       }
 
-  next-rest-framework@6.0.7:
+  next@16.2.4:
     resolution:
       {
-        integrity: sha512-ruxHhvmpZdvcUZQKEs26SglqENmmCZBZtMTBvQenS8eLTYmFqtEg7wqFaiOWOAwmnw1Yc9Jed9foVDrJ/fLnrA==,
+        integrity: sha512-kPvz56wF5frc+FxlHI5qnklCzbq53HTwORaWBGdT0vNoKh1Aya9XC8aPauH4NJxqtzbWsS5mAbctm4cr+EkQ2Q==,
       }
-    hasBin: true
-
-  next@15.5.15:
-    resolution:
-      {
-        integrity: sha512-VSqCrJwtLVGwAVE0Sb/yikrQfkwkZW9p+lL/J4+xe+G3ZA+QnWPqgcfH1tDUEuk9y+pthzzVFp4L/U8JerMfMQ==,
-      }
-    engines: { node: ^18.18.0 || ^19.8.0 || >= 20.0.0 }
+    engines: { node: ">=20.9.0" }
     hasBin: true
     peerDependencies:
       "@opentelemetry/api": ^1.1.0
@@ -14356,14 +14307,6 @@ packages:
       prettier:
         optional: true
 
-  prettier@3.0.2:
-    resolution:
-      {
-        integrity: sha512-o2YR9qtniXvwEZlOKbveKfDQVyqxbEIWn48Z8m3ZJjBjcCmUy3xZGIv+7AkaeuaTr6yPXJjwv07ZWlsWbEy1rQ==,
-      }
-    engines: { node: ">=14" }
-    hasBin: true
-
   prettier@3.8.3:
     resolution:
       {
@@ -14540,13 +14483,6 @@ packages:
       You or someone you depend on is using Q, the JavaScript Promise library that gave JavaScript developers strong feelings about promises. They can almost certainly migrate to the native JavaScript promise now. Thank you literally everyone for joining me in this bet against the odds. Be excellent to each other.
 
       (For a CapTP with native promises, see @endo/eventual-send and @endo/captp)
-
-  qs@6.11.2:
-    resolution:
-      {
-        integrity: sha512-tDNIz22aBzCDxLtVH++VnTfzxlfeK5CbqohpSqpJgj1Wg/cQbStNAz3NuqCs5vV+pjBsK4x4pN9HlVh7rcYRiA==,
-      }
-    engines: { node: ">=0.6" }
 
   qs@6.14.2:
     resolution:
@@ -17930,14 +17866,6 @@ packages:
     engines: { node: ">=8.0.0" }
     hasBin: true
 
-  zod-to-json-schema@3.21.4:
-    resolution:
-      {
-        integrity: sha512-fjUZh4nQ1s6HMccgIeE0VP4QG/YRGPmyjO9sAh890aQKPEk3nqbfUXhMFaC+Dr5KvYBm8BCyvfpZf2jY9aGSsw==,
-      }
-    peerDependencies:
-      zod: ^3.21.4
-
   zod-validation-error@2.1.0:
     resolution:
       {
@@ -19789,41 +19717,39 @@ snapshots:
       "@tybys/wasm-util": 0.10.1
     optional: true
 
-  "@next/env@15.5.15": {}
+  "@next/env@16.2.4": {}
 
   "@next/eslint-plugin-next@16.2.4":
     dependencies:
       fast-glob: 3.3.1
 
-  "@next/swc-darwin-arm64@15.5.15":
+  "@next/swc-darwin-arm64@16.2.4":
     optional: true
 
-  "@next/swc-darwin-x64@15.5.15":
+  "@next/swc-darwin-x64@16.2.4":
     optional: true
 
-  "@next/swc-linux-arm64-gnu@15.5.15":
+  "@next/swc-linux-arm64-gnu@16.2.4":
     optional: true
 
-  "@next/swc-linux-arm64-musl@15.5.15":
+  "@next/swc-linux-arm64-musl@16.2.4":
     optional: true
 
-  "@next/swc-linux-x64-gnu@15.5.15":
+  "@next/swc-linux-x64-gnu@16.2.4":
     optional: true
 
-  "@next/swc-linux-x64-musl@15.5.15":
+  "@next/swc-linux-x64-musl@16.2.4":
     optional: true
 
-  "@next/swc-win32-arm64-msvc@15.5.15":
+  "@next/swc-win32-arm64-msvc@16.2.4":
     optional: true
 
-  "@next/swc-win32-x64-msvc@15.5.15":
+  "@next/swc-win32-x64-msvc@16.2.4":
     optional: true
 
   "@nicolo-ribaudo/eslint-scope-5-internals@5.1.1-v1":
     dependencies:
       eslint-scope: 5.1.1
-
-  "@noble/hashes@1.8.0": {}
 
   "@nodelib/fs.scandir@2.1.5":
     dependencies:
@@ -19890,10 +19816,6 @@ snapshots:
   "@npmcli/promise-spawn@7.0.2":
     dependencies:
       which: 4.0.0
-
-  "@paralleldrive/cuid2@2.3.1":
-    dependencies:
-      "@noble/hashes": 1.8.0
 
   "@parcel/watcher-android-arm64@2.5.6":
     optional: true
@@ -22441,8 +22363,6 @@ snapshots:
 
   arrify@1.0.1: {}
 
-  asap@2.0.6: {}
-
   asn1.js@4.10.1:
     dependencies:
       bn.js: 4.12.3
@@ -22991,8 +22911,6 @@ snapshots:
   comlink@4.4.2: {}
 
   comma-separated-tokens@2.0.3: {}
-
-  commander@10.0.1: {}
 
   commander@14.0.3: {}
 
@@ -23578,11 +23496,6 @@ snapshots:
     dependencies:
       dequal: 2.0.3
 
-  dezalgo@1.0.4:
-    dependencies:
-      asap: 2.0.6
-      wrappy: 1.0.2
-
   diff@5.2.2: {}
 
   diffie-hellman@5.0.3:
@@ -23705,15 +23618,12 @@ snapshots:
     dependencies:
       is-obj: 2.0.0
 
-  drizzle-orm@0.38.3(@types/react@19.2.14)(react@19.2.5):
-    optionalDependencies:
-      "@types/react": 19.2.14
-      react: 19.2.5
+  drizzle-orm@0.45.2: {}
 
-  drizzle-zod@0.7.1(drizzle-orm@0.38.3(@types/react@19.2.14)(react@19.2.5))(zod@3.25.76):
+  drizzle-zod@0.8.3(drizzle-orm@0.45.2)(zod@4.3.6):
     dependencies:
-      drizzle-orm: 0.38.3(@types/react@19.2.14)(react@19.2.5)
-      zod: 3.25.76
+      drizzle-orm: 0.45.2
+      zod: 4.3.6
 
   dumi-afx-deps@1.0.0-alpha.20: {}
 
@@ -24364,8 +24274,8 @@ snapshots:
       "@babel/parser": 7.29.2
       eslint: 9.39.4(jiti@2.6.1)
       hermes-parser: 0.25.1
-      zod: 4.3.6
-      zod-validation-error: 4.0.2(zod@4.3.6)
+      zod: 3.25.76
+      zod-validation-error: 4.0.2(zod@3.25.76)
     transitivePeerDependencies:
       - supports-color
 
@@ -24855,12 +24765,6 @@ snapshots:
   formdata-polyfill@4.0.10:
     dependencies:
       fetch-blob: 3.2.0
-
-  formidable@3.5.4:
-    dependencies:
-      "@paralleldrive/cuid2": 2.3.1
-      dezalgo: 1.0.4
-      once: 1.4.0
 
   forwarded@0.2.0: {}
 
@@ -26256,8 +26160,6 @@ snapshots:
 
   lodash.upperfirst@4.3.1: {}
 
-  lodash@4.17.21: {}
-
   lodash@4.17.23: {}
 
   lodash@4.18.1: {}
@@ -27371,36 +27273,25 @@ snapshots:
 
   neo-async@2.6.2: {}
 
-  next-rest-framework@6.0.7(zod@3.25.76):
+  next@16.2.4(@babel/core@7.29.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(sass@1.54.0):
     dependencies:
-      chalk: 4.1.2
-      commander: 10.0.1
-      formidable: 3.5.4
-      lodash: 4.17.21
-      prettier: 3.0.2
-      qs: 6.11.2
-      zod-to-json-schema: 3.21.4(zod@3.25.76)
-    transitivePeerDependencies:
-      - zod
-
-  next@15.5.15(@babel/core@7.29.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(sass@1.54.0):
-    dependencies:
-      "@next/env": 15.5.15
+      "@next/env": 16.2.4
       "@swc/helpers": 0.5.15
+      baseline-browser-mapping: 2.10.19
       caniuse-lite: 1.0.30001788
       postcss: 8.4.31
       react: 19.2.5
       react-dom: 19.2.5(react@19.2.5)
       styled-jsx: 5.1.6(@babel/core@7.29.0)(react@19.2.5)
     optionalDependencies:
-      "@next/swc-darwin-arm64": 15.5.15
-      "@next/swc-darwin-x64": 15.5.15
-      "@next/swc-linux-arm64-gnu": 15.5.15
-      "@next/swc-linux-arm64-musl": 15.5.15
-      "@next/swc-linux-x64-gnu": 15.5.15
-      "@next/swc-linux-x64-musl": 15.5.15
-      "@next/swc-win32-arm64-msvc": 15.5.15
-      "@next/swc-win32-x64-msvc": 15.5.15
+      "@next/swc-darwin-arm64": 16.2.4
+      "@next/swc-darwin-x64": 16.2.4
+      "@next/swc-linux-arm64-gnu": 16.2.4
+      "@next/swc-linux-arm64-musl": 16.2.4
+      "@next/swc-linux-x64-gnu": 16.2.4
+      "@next/swc-linux-x64-musl": 16.2.4
+      "@next/swc-win32-arm64-msvc": 16.2.4
+      "@next/swc-win32-x64-msvc": 16.2.4
       sass: 1.54.0
       sharp: 0.34.5
     transitivePeerDependencies:
@@ -28172,8 +28063,6 @@ snapshots:
     optionalDependencies:
       prettier: 3.8.3
 
-  prettier@3.0.2: {}
-
   prettier@3.8.3: {}
 
   pretty-error@4.0.0:
@@ -28264,10 +28153,6 @@ snapshots:
   punycode@2.3.1: {}
 
   q@1.5.1: {}
-
-  qs@6.11.2:
-    dependencies:
-      side-channel: 1.1.0
 
   qs@6.14.2:
     dependencies:
@@ -30797,17 +30682,13 @@ snapshots:
     optionalDependencies:
       commander: 9.5.0
 
-  zod-to-json-schema@3.21.4(zod@3.25.76):
-    dependencies:
-      zod: 3.25.76
-
   zod-validation-error@2.1.0(zod@3.25.76):
     dependencies:
       zod: 3.25.76
 
-  zod-validation-error@4.0.2(zod@4.3.6):
+  zod-validation-error@4.0.2(zod@3.25.76):
     dependencies:
-      zod: 4.3.6
+      zod: 3.25.76
 
   zod@3.25.76: {}
 
