@@ -100,7 +100,7 @@ describe("createTableSchema", () => {
   it("selectSchema 验证合法数据", () => {
     const now = new Date();
     const result = selectSchema.safeParse({
-      id: "a1b2c3d4-0000-0000-0000-000000000000",
+      id: "a1b2c3d4-e5f6-4a7b-8c9d-000000000001",
       creatorId: null,
       editorId: null,
       title: "Hello",
