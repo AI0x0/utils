@@ -2,24 +2,28 @@ import type { NextRequest } from "next/server";
 import type { ZodType } from "zod";
 
 declare module "next-rest-framework" {
-  type RouteHandler = (req: NextRequest) => Promise<Response>;
+  export interface RouteOperationDefinition<M extends string = string> {
+    _method: M;
+  }
 
-  interface RouteOperationBuilder {
+  interface RouteOperationBuilder<M extends string> {
     input: (opts: {
       body?: ZodType;
       query?: ZodType;
       contentType?: string;
-    }) => RouteOperationBuilder;
+    }) => RouteOperationBuilder<M>;
     outputs: (
       opts: { body?: ZodType; status?: number; contentType?: string }[],
-    ) => RouteOperationBuilder;
-    handler: (fn: RouteHandler) => RouteHandler;
+    ) => RouteOperationBuilder<M>;
+    handler: (
+      fn: (req: NextRequest) => Promise<Response>,
+    ) => RouteOperationDefinition<M>;
   }
 
-  export const routeOperation: (opts: {
-    method: string;
+  export const routeOperation: <M extends string>(opts: {
+    method: M;
     openApiOperation?: { summary?: string; tags?: string[] };
-  }) => RouteOperationBuilder;
+  }) => RouteOperationBuilder<M>;
 
   export const rpcOperation: () => {
     outputs: (opts: { body?: ZodType; contentType?: string }[]) => {

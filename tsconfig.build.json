@@ -2,11 +2,10 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "paths": {
-      "@/*": ["src/*"],
-      "next-rest-framework": ["src/__shims__/next-rest-framework.d.ts"]
+      "@/*": ["src/*"]
     },
     "ignoreDeprecations": "6.0"
   },
   "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules", "src/__tests__"]
+  "exclude": ["node_modules", "src/__tests__", "src/__shims__"]
 }
