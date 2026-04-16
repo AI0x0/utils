@@ -10,11 +10,11 @@ export function createPutAction<T extends ZodSchema, TTable extends BaseTable>({
   table,
 }: {
   bodySchema: T;
-  db: NodePgDatabase<any>;
+  db: NodePgDatabase<Record<string, unknown>>;
   table: TTable;
 }) {
   return async (
-    body: Partial<z.infer<T>> & Record<string, any>,
+    body: Partial<z.infer<T>> & Record<string, unknown>,
     {
       byCreator = true,
     }: {
@@ -29,7 +29,10 @@ export function createPutAction<T extends ZodSchema, TTable extends BaseTable>({
           creatorId: z.string(),
           id: z.string(),
         }),
-      })({ creatorId: body.editorId, id: body.id });
+      })({
+        creatorId: body.editorId as string | undefined,
+        id: body.id as string,
+      });
       if (!data) {
         throw Error("未找到编辑对象，或没有权限");
       }
@@ -37,7 +40,7 @@ export function createPutAction<T extends ZodSchema, TTable extends BaseTable>({
     const [data] = await db
       .update(table)
       .set(transformBody(body))
-      .where(eq(table.id, body.id))
+      .where(eq(table.id, body.id as string))
       .returning();
     return data as z.infer<T>;
   };

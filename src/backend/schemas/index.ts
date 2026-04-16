@@ -1,4 +1,4 @@
-import { z, ZodObject, ZodTypeAny } from "zod";
+import { z, ZodObject, ZodType } from "zod";
 import {
   PgColumnBuilderBase,
   pgTable,
@@ -32,9 +32,7 @@ export const basicFields = {
 };
 
 //============================列表查询字段============================//
-export const queryListSchema = <Incoming extends ZodObject<any>>(
-  schema: Incoming,
-) =>
+export const queryListSchema = <Incoming extends ZodObject>(schema: Incoming) =>
   z
     .object({
       current: z.string().optional().default("1"), // 默认页码为 1
@@ -48,7 +46,7 @@ export const queryListSchema = <Incoming extends ZodObject<any>>(
     .merge(schema);
 
 //============================列表返回字段============================//
-export const listBodySchema = <T extends ZodTypeAny>(schema: T) =>
+export const listBodySchema = <T extends ZodType>(schema: T) =>
   z.object({
     total: z.number(),
     data: z.array(schema),
@@ -87,7 +85,10 @@ export const createTableSchema = <
     extraConfig,
   );
   // 创建基础的schema
-  const selectSchema = createSelectSchema(table as any, refineSchema) as any;
+  const selectSchema = createSelectSchema(
+    table as unknown as Table,
+    refineSchema as NoUnknownKeys<TRefine, Table["$inferSelect"]> | undefined,
+  );
   // 去掉基础的字段的table
   const insertTable = pgTable(name, columns);
   const updateTable = pgTable(name, {
@@ -97,15 +98,16 @@ export const createTableSchema = <
   return {
     table,
     selectSchema,
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    insertSchema: createInsertSchema(insertTable, refineSchema),
+    insertSchema: createInsertSchema(
+      insertTable as unknown as Table,
+      refineSchema as NoUnknownKeys<TRefine, Table["$inferInsert"]> | undefined,
+    ),
     updateSchema: createUpdateSchema(
-      updateTable as any,
+      updateTable as unknown as Table,
       {
         id: z.string(),
-        ...refineSchema,
-      } as any,
+        ...(refineSchema as Record<string, unknown>),
+      } as Parameters<typeof createUpdateSchema>[1],
     ),
     querySchema: selectSchema.pick({ id: true }),
     queryListSchema: queryListSchema(selectSchema.partial()),

@@ -20,7 +20,7 @@ export const createDeleteOperation =
     db,
     getSession,
   }: {
-    db: NodePgDatabase<any>;
+    db: NodePgDatabase<Record<string, unknown>>;
     getSession: (req: NextRequest) => Promise<{ userId?: string } | undefined>;
   }) =>
   <TTable extends BaseTable>({
@@ -43,7 +43,7 @@ export const createDeleteOperation =
         }),
         contentType: "application/json",
       })
-      .handler(async (req: any) => {
+      .handler(async (req: NextRequest) => {
         try {
           const body: {
             id: string;
@@ -61,9 +61,9 @@ export const createDeleteOperation =
         } catch (e) {
           const response = await onError?.(e as Error);
           if (response) {
-            return response as any;
+            return response;
           } else {
             throw e;
           }
         }
-      }) as any;
+      });

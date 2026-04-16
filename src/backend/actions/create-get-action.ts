@@ -13,12 +13,12 @@ export function createGetAction<T extends ZodSchema, TTable extends BaseTable>({
   table,
 }: {
   bodySchema: T;
-  db: NodePgDatabase<any>;
+  db: NodePgDatabase<Record<string, unknown>>;
   jsonArrayFields?: string[];
   relations?: GetListRelations;
   table: TTable;
 }) {
-  return async (params: Partial<z.infer<T>> & Record<string, any>) => {
+  return async (params: Partial<z.infer<T>> & Record<string, unknown>) => {
     const fields: SelectedFields = {};
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore

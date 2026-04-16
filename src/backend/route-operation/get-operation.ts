@@ -21,7 +21,7 @@ export interface GetOperationOptions<
   relations?: GetListRelations;
   setParams?: (
     req: TypedNextRequest<"GET", "application/json", unknown, z.infer<Q>>,
-  ) => Promise<Record<string, any>>;
+  ) => Promise<Record<string, unknown>>;
   onSuccess?: (data: z.infer<T>) => Promise<z.infer<T>>;
   onError?: (
     error: Error,
@@ -36,7 +36,7 @@ export const createGetOperation =
     getSession,
     db,
   }: {
-    db: NodePgDatabase<any>;
+    db: NodePgDatabase<Record<string, unknown>>;
     getSession: (req: NextRequest) => Promise<{ userId?: string } | undefined>;
   }) =>
   <T extends ZodSchema, Q extends ZodSchema, TTable extends BaseTable>({
@@ -68,37 +68,38 @@ export const createGetOperation =
           status: 200,
         },
       ])
-      .handler(async (req: any) => {
+      .handler(async (req: NextRequest) => {
         try {
-          const params = (await setParams?.(req)) || ({} as any);
+          const params: Record<string, unknown> =
+            (await setParams?.(req)) || {};
           if (byCreator) {
-            const { userId } = (await getSession(req)) || ({} as any);
+            const { userId } = (await getSession(req)) || {};
             params.creatorId = userId;
           }
 
-          let result =
-            (await createGetAction({
-              bodySchema,
-              db,
-              jsonArrayFields,
-              relations,
-              table,
-            })(
-              Object.assign(
-                Object.fromEntries(new URL(req.url).searchParams),
-                params,
-              ) as any,
-            )) || ({} as any);
+          const rawResult = await createGetAction({
+            bodySchema,
+            db,
+            jsonArrayFields,
+            relations,
+            table,
+          })(
+            Object.assign(
+              Object.fromEntries(new URL(req.url).searchParams),
+              params,
+            ) as Partial<z.infer<T>> & Record<string, unknown>,
+          );
+          let result = (rawResult ?? ({} as z.infer<T>)) as z.infer<T>;
           if (onSuccess) {
-            result = (await onSuccess(result as any)) as any;
+            result = await onSuccess(result);
           }
           return TypedNextResponse.json(result, { status: 200 });
         } catch (e) {
           const response = await onError?.(e as Error);
           if (response) {
-            return response as any;
+            return response;
           } else {
             throw e;
           }
         }
-      }) as any;
+      });

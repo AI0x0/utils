@@ -8,7 +8,7 @@ export function createDeleteAction<TTable extends BaseTable>({
   table,
   db,
 }: {
-  db: NodePgDatabase<any>;
+  db: NodePgDatabase<Record<string, unknown>>;
   table: TTable;
 }) {
   return async ({ id, creatorId }: { id: string; creatorId?: string }) => {

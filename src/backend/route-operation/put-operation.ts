@@ -36,7 +36,7 @@ export const createPutOperation =
     db,
   }: {
     getSession: (req: NextRequest) => Promise<{ userId?: string } | undefined>;
-    db: NodePgDatabase<any>;
+    db: NodePgDatabase<Record<string, unknown>>;
   }) =>
   <IB extends ZodSchema, OB extends ZodSchema, TTable extends BaseTable>({
     bodySchema,
@@ -66,14 +66,14 @@ export const createPutOperation =
           contentType: "application/json",
         },
       ])
-      .handler(async (req: any) => {
+      .handler(async (req: NextRequest) => {
         try {
           const { userId } = (await getSession(req)) || {};
           const body = Object.assign(
             await req.json(),
             (await setBody?.(req)) || {},
           );
-          let data = await createPutAction({
+          const raw = await createPutAction({
             bodySchema,
             table,
             db,
@@ -84,16 +84,16 @@ export const createPutOperation =
             },
             { byCreator },
           );
-          if (onSuccess) {
-            data = (await onSuccess(data as any)) as any;
-          }
+          const data = onSuccess
+            ? await onSuccess(raw as unknown as z.infer<OB>)
+            : (raw as unknown as z.infer<OB>);
           return TypedNextResponse.json(data, { status: 200 });
         } catch (e) {
           const response = await onError?.(e as Error);
           if (response) {
-            return response as any;
+            return response;
           } else {
             throw e;
           }
         }
-      }) as any;
+      });

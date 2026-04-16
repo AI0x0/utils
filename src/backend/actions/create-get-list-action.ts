@@ -16,13 +16,16 @@ export function createGetListAction<
   table,
 }: {
   bodySchema: T;
-  db: NodePgDatabase<any>;
+  db: NodePgDatabase<Record<string, unknown>>;
   jsonArrayFields?: string[];
   relations?: GetListRelations;
   table: TTable;
 }) {
-  return async (params: Partial<z.infer<T>> & Record<string, any>) => {
-    const { current, pageSize, ...other } = params as Record<string, any>;
+  return async (params: Partial<z.infer<T>> & Record<string, unknown>) => {
+    const { current, pageSize, ...other } = params as Record<
+      string,
+      unknown
+    > & { current?: number; pageSize?: number };
     const fields: SelectedFields = {};
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore

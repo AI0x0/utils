@@ -43,7 +43,7 @@ export const createGetListOperation =
     db,
     getSession,
   }: {
-    db: NodePgDatabase<any>;
+    db: NodePgDatabase<Record<string, unknown>>;
     getSession: (req: NextRequest) => Promise<{ userId?: string } | undefined>;
   }) =>
   <T extends ZodSchema, Q extends ZodSchema, TTable extends BaseTable>({
@@ -75,7 +75,7 @@ export const createGetListOperation =
           status: 200,
         },
       ])
-      .handler(async (req: any) => {
+      .handler(async (req: NextRequest) => {
         try {
           const params = (await setParams?.(req)) || {};
           if (byCreator) {
@@ -93,7 +93,7 @@ export const createGetListOperation =
             Object.assign(
               Object.fromEntries(new URL(req.url).searchParams),
               params,
-            ) as any,
+            ) as Partial<z.infer<T>> & Record<string, unknown>,
           );
 
           if (onSuccess) {
@@ -104,9 +104,9 @@ export const createGetListOperation =
         } catch (e) {
           const response = await onError?.(e as Error);
           if (response) {
-            return response as any;
+            return response;
           } else {
             throw e;
           }
         }
-      }) as any;
+      });

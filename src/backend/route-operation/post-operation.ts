@@ -33,7 +33,7 @@ export const createPostOperation =
     getSession,
     db,
   }: {
-    db: NodePgDatabase<any>;
+    db: NodePgDatabase<Record<string, unknown>>;
     getSession: (req: NextRequest) => Promise<{ userId?: string } | undefined>;
   }) =>
   <IB extends ZodSchema, OB extends ZodSchema, TTable extends PgTable>({
@@ -63,27 +63,27 @@ export const createPostOperation =
           status: 200,
         },
       ])
-      .handler(async (req: any) => {
+      .handler(async (req: NextRequest) => {
         try {
           const { userId } = (await getSession(req)) || {};
           const body = Object.assign(
             await req.json(),
             (await setBody?.(req)) || {},
           );
-          let [data] = await createPostAction({ bodySchema, db, table })({
+          const [raw] = await createPostAction({ bodySchema, db, table })({
             creatorId: userId,
             ...body,
           });
-          if (onSuccess) {
-            data = (await onSuccess(data as any)) as any;
-          }
+          const data = onSuccess
+            ? await onSuccess(raw as unknown as z.infer<OB>)
+            : (raw as unknown as z.infer<OB>);
           return TypedNextResponse.json(data, { status: 200 });
         } catch (e) {
           const response = await onError?.(e as Error);
           if (response) {
-            return response as any;
+            return response;
           } else {
             throw e;
           }
         }
-      }) as any;
+      });

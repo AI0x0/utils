@@ -1,4 +1,5 @@
 import { BaseTable, GetListRelations } from "@/backend/types";
+import { PgTable } from "drizzle-orm/pg-core";
 import { SelectedFields } from "drizzle-orm/pg-core/query-builders/select.types";
 import {
   and,
@@ -27,12 +28,12 @@ export function getListQuery<
   relations,
   table,
 }: {
-  db: NodePgDatabase<any>;
+  db: NodePgDatabase<Record<string, unknown>>;
   fields: TSelection;
   jsonArrayFields?: string[];
   params: {
     // 排序方向
-    [field: string]: any;
+    [field: string]: unknown;
     // 每页条数
     orderBy?: keyof BaseTable;
     // 排序字段
@@ -66,7 +67,7 @@ export function getListQuery<
       }
     }
 
-    const query = db.select(queryFields).from(table as any);
+    const query = db.select(queryFields).from(table as unknown as PgTable);
 
     // 添加分组
     if (relations?.length) {
@@ -101,7 +102,7 @@ export function getListQuery<
   function addCondition(
     conditions: SQL[],
     key: string,
-    value: any,
+    value: unknown,
     targetColumn: Column,
   ) {
     const isIdField = /id/i.test(key);
@@ -161,7 +162,7 @@ export function getListQuery<
 
   // 构建查询条件
   function buildConditions(
-    filters: Record<string, any>,
+    filters: Record<string, unknown>,
     table: BaseTable,
     relations?: GetListRelations,
   ) {
@@ -183,9 +184,9 @@ export function getListQuery<
         if (!targetColumn) continue;
 
         if (key.endsWith("AtFrom")) {
-          conditions.push(gte(targetColumn, new Date(value)));
+          conditions.push(gte(targetColumn, new Date(value as string)));
         } else if (key.endsWith("AtTo")) {
-          conditions.push(lte(targetColumn, new Date(value)));
+          conditions.push(lte(targetColumn, new Date(value as string)));
         }
         continue;
       }
@@ -232,7 +233,7 @@ export function getListQuery<
   // 构建计数查询(优化后)
   const countQuery = db
     .select({ count: sql`COUNT(DISTINCT ${table.id})` })
-    .from(table as any)
+    .from(table as unknown as PgTable)
     .where(conditions.length > 0 ? and(...conditions) : undefined);
 
   // 添加关联
