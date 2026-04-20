@@ -7,8 +7,7 @@ import {
 } from "next-rest-framework";
 import getTableName from "./get-table-name";
 import { createGetAction } from "../actions";
-import { NodePgDatabase } from "drizzle-orm/node-postgres";
-import { BaseTable, GetListRelations } from "@/backend/types";
+import { BaseTable, GetListRelations, AnyDatabase } from "@/backend/types";
 
 export interface GetOperationOptions<
   T extends ZodSchema,
@@ -36,7 +35,7 @@ export const createGetOperation =
     getSession,
     db,
   }: {
-    db: NodePgDatabase<Record<string, unknown>>;
+    db: AnyDatabase;
     getSession: (req: NextRequest) => Promise<{ userId?: string } | undefined>;
   }) =>
   <T extends ZodSchema, Q extends ZodSchema, TTable extends BaseTable>({

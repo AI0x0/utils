@@ -1,11 +1,11 @@
 import { z, ZodObject, ZodType } from "zod";
 import {
-  PgColumnBuilderBase,
-  pgTable,
-  PgTableExtraConfigValue,
-  timestamp,
-  uuid,
-} from "drizzle-orm/pg-core";
+  SQLiteColumnBuilderBase,
+  sqliteTable,
+  SQLiteTableExtraConfigValue,
+  text,
+  integer,
+} from "drizzle-orm/sqlite-core";
 import { BuildExtraConfigColumns, Table } from "drizzle-orm";
 import {
   BuildRefine,
@@ -16,29 +16,31 @@ import {
 } from "drizzle-zod";
 
 //============================基本字段============================//
-const timestamptz = (name: string) => timestamp(name, { withTimezone: true });
-
-const createdAt = () => timestamptz("created_at").notNull().defaultNow();
-const updatedAt = () => timestamptz("updated_at").notNull().defaultNow();
-const accessedAt = () => timestamptz("accessed_at").notNull().defaultNow();
+// SQLite / D1：用 text 存 ISO 时间戳，用 text 存 uuid（crypto.randomUUID()）
+const timestamp = (name: string) =>
+  text(name).$defaultFn(() => new Date().toISOString());
 
 export const basicFields = {
-  id: uuid("id").defaultRandom().primaryKey(),
-  creatorId: uuid("creator_id"),
-  editorId: uuid("editor_id"),
-  accessedAt: accessedAt(),
-  createdAt: createdAt(),
-  updatedAt: updatedAt(),
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  creatorId: text("creator_id"),
+  editorId: text("editor_id"),
+  accessedAt: timestamp("accessed_at").notNull(),
+  createdAt: timestamp("created_at").notNull(),
+  updatedAt: timestamp("updated_at").notNull(),
 };
+
+export { integer, text };
 
 //============================列表查询字段============================//
 export const queryListSchema = <Incoming extends ZodObject>(schema: Incoming) =>
   z
     .object({
-      current: z.string().optional().default("1"), // 默认页码为 1
-      pageSize: z.string().optional().default("10"), // 默认每页条数为 10
-      createdAtFrom: z.string().optional(), // 筛选开始日期
-      createdAtTo: z.string().optional(), // 筛选结束日期
+      current: z.string().optional().default("1"),
+      pageSize: z.string().optional().default("10"),
+      createdAtFrom: z.string().optional(),
+      createdAtTo: z.string().optional(),
       orderBy: z.string().optional(),
       creatorId: z.string().optional(),
       orderDir: z.enum(["asc", "desc"]).optional(),
@@ -52,10 +54,10 @@ export const listBodySchema = <T extends ZodType>(schema: T) =>
     data: z.array(schema),
   });
 
-//============================创建一个pg表============================//
+//============================创建一个 SQLite 表（D1）============================//
 export const createTableSchema = <
   TTableName extends string,
-  TColumnsMap extends Record<string, PgColumnBuilderBase>,
+  TColumnsMap extends Record<string, SQLiteColumnBuilderBase>,
   TTable extends Table,
   TRefine extends BuildRefine<TTable["_"]["columns"], undefined>,
 >({
@@ -70,31 +72,31 @@ export const createTableSchema = <
   extraConfig?: (
     self: BuildExtraConfigColumns<
       string,
-      Record<string, PgColumnBuilderBase>,
-      "pg"
+      Record<string, SQLiteColumnBuilderBase>,
+      "sqlite"
     >,
-  ) => PgTableExtraConfigValue[];
+  ) => SQLiteTableExtraConfigValue[];
 }) => {
-  // 创建表
-  const table = pgTable(
+  const table = sqliteTable(
     name,
     {
       ...basicFields,
       ...columns,
-    },
-    extraConfig,
+    } as TColumnsMap & typeof basicFields,
+    extraConfig as never,
   );
-  // 创建基础的schema
   const selectSchema = createSelectSchema(
     table as unknown as Table,
     refineSchema as NoUnknownKeys<TRefine, Table["$inferSelect"]> | undefined,
   );
-  // 去掉基础的字段的table
-  const insertTable = pgTable(name, columns);
-  const updateTable = pgTable(name, {
-    id: uuid(),
+  const insertTable = sqliteTable(
+    name,
+    columns as Record<string, SQLiteColumnBuilderBase>,
+  );
+  const updateTable = sqliteTable(name, {
+    id: text("id"),
     ...columns,
-  });
+  } as TColumnsMap & { id: typeof basicFields.id });
   return {
     table,
     selectSchema,
