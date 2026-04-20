@@ -1,5 +1,5 @@
 import { z, ZodSchema } from "zod";
-import { PgTable } from "drizzle-orm/pg-core";
+import { SQLiteTable } from "drizzle-orm/sqlite-core";
 import {
   routeOperation,
   TypedNextRequest,
@@ -13,7 +13,7 @@ import { BaseTable, AnyDatabase } from "@/backend/types";
 export interface PutOperationOptions<
   IB extends ZodSchema,
   OB extends ZodSchema,
-  TTable extends PgTable,
+  TTable extends SQLiteTable,
 > {
   bodySchema: IB;
   outputBodySchema?: OB;

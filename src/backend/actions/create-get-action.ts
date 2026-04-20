@@ -1,6 +1,6 @@
 import { z, ZodSchema } from "zod";
 import { getListQuery } from "./get-list-query";
-import { SelectedFields } from "drizzle-orm/pg-core/query-builders/select.types";
+import { SelectedFields } from "drizzle-orm/sqlite-core/query-builders/select.types";
 import { getListData } from "./get-list-data";
 import { BaseTable, GetListRelations, AnyDatabase } from "@/backend/types";
 

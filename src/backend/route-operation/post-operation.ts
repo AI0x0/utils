@@ -1,6 +1,6 @@
 import { z, ZodSchema } from "zod";
 import { AnyDatabase } from "@/backend/types";
-import { PgTable } from "drizzle-orm/pg-core";
+import { SQLiteTable } from "drizzle-orm/sqlite-core";
 import { NextRequest } from "next/server";
 import {
   routeOperation,
@@ -12,7 +12,7 @@ import { createPostAction } from "../actions";
 export interface PostOperationOptions<
   IB extends ZodSchema,
   OB extends ZodSchema,
-  TTable extends PgTable,
+  TTable extends SQLiteTable,
 > {
   bodySchema: IB;
   outputBodySchema?: IB;
@@ -35,7 +35,7 @@ export const createPostOperation =
     db: AnyDatabase;
     getSession: (req: NextRequest) => Promise<{ userId?: string } | undefined>;
   }) =>
-  <IB extends ZodSchema, OB extends ZodSchema, TTable extends PgTable>({
+  <IB extends ZodSchema, OB extends ZodSchema, TTable extends SQLiteTable>({
     bodySchema,
     outputBodySchema,
     setBody,

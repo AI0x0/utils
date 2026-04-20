@@ -1,6 +1,6 @@
-import { PgTable } from "drizzle-orm/pg-core";
+import { SQLiteTable } from "drizzle-orm/sqlite-core";
 
-function getTableName(table: PgTable): string {
+function getTableName(table: SQLiteTable): string {
   const symbols = Object.getOwnPropertySymbols(table);
   const nameSymbol = symbols.find(
     (sym) => sym.toString() === "Symbol(drizzle:Name)",

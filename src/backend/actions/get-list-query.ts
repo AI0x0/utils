@@ -1,6 +1,6 @@
 import { BaseTable, GetListRelations, AnyDatabase } from "@/backend/types";
-import { PgTable } from "drizzle-orm/pg-core";
-import { SelectedFields } from "drizzle-orm/pg-core/query-builders/select.types";
+import { SQLiteTable } from "drizzle-orm/sqlite-core";
+import { SelectedFields } from "drizzle-orm/sqlite-core/query-builders/select.types";
 import {
   and,
   asc,
@@ -8,13 +8,15 @@ import {
   desc,
   eq,
   gte,
-  ilike,
   inArray,
   lte,
   or,
   sql,
   SQL,
 } from "drizzle-orm";
+
+const ciLike = (col: Column, value: string) =>
+  sql`LOWER(${col}) LIKE ${value.toLowerCase()}`;
 export function getListQuery<
   TTable extends BaseTable,
   TSelection extends SelectedFields,
@@ -65,7 +67,7 @@ export function getListQuery<
       }
     }
 
-    const query = db.select(queryFields).from(table as unknown as PgTable);
+    const query = db.select(queryFields).from(table as unknown as SQLiteTable);
 
     // 添加分组
     if (relations?.length) {
@@ -120,8 +122,8 @@ export function getListQuery<
             conditions.push(
               sql`
                 EXISTS (
-                  SELECT 1 FROM jsonb_array_elements_text(${targetColumn}) tag
-                  WHERE tag LIKE ${`%${values[0]}%`}
+                  SELECT 1 FROM json_each(${targetColumn})
+                  WHERE LOWER(json_each.value) LIKE ${`%${values[0]}%`}
                 )
               `,
             );
@@ -130,7 +132,7 @@ export function getListQuery<
           } else {
             conditions.push(
               or(
-                ...values.map((v: string) => ilike(targetColumn, `%${v}%`)),
+                ...values.map((v: string) => ciLike(targetColumn, `%${v}%`)),
               ) as SQL,
             );
           }
@@ -142,15 +144,15 @@ export function getListQuery<
           conditions.push(
             sql`
               EXISTS (
-                SELECT 1 FROM jsonb_array_elements_text(${targetColumn}) tag
-                WHERE tag LIKE ${`%${value}%`}
+                SELECT 1 FROM json_each(${targetColumn})
+                WHERE LOWER(json_each.value) LIKE ${`%${value}%`}
               )
             `,
           );
         } else if (isIdField) {
           conditions.push(eq(targetColumn, value));
         } else {
-          conditions.push(ilike(targetColumn, `%${value}%`));
+          conditions.push(ciLike(targetColumn, `%${value}%`));
         }
       }
     } else {
@@ -231,7 +233,7 @@ export function getListQuery<
   // 构建计数查询(优化后)
   const countQuery = db
     .select({ count: sql`COUNT(DISTINCT ${table.id})` })
-    .from(table as unknown as PgTable)
+    .from(table as unknown as SQLiteTable)
     .where(conditions.length > 0 ? and(...conditions) : undefined);
 
   // 添加关联
