@@ -82,7 +82,7 @@ export const createTableSchema = <
     {
       ...basicFields,
       ...columns,
-    } as Record<string, SQLiteColumnBuilderBase>,
+    } as TColumnsMap & typeof basicFields,
     extraConfig as never,
   );
   const selectSchema = createSelectSchema(
@@ -96,7 +96,7 @@ export const createTableSchema = <
   const updateTable = sqliteTable(name, {
     id: text("id"),
     ...columns,
-  } as Record<string, SQLiteColumnBuilderBase>);
+  } as TColumnsMap & { id: typeof basicFields.id });
   return {
     table,
     selectSchema,
