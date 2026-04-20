@@ -1,9 +1,8 @@
 import { routeOperation, TypedNextResponse } from "next-rest-framework";
 import { z } from "zod";
-import { BaseTable } from "@/backend/types";
+import { BaseTable, AnyDatabase } from "@/backend/types";
 import getTableName from "@/backend/route-operation/get-table-name";
 import { createDeleteAction } from "@/backend/actions";
-import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { NextRequest } from "next/server";
 
 export interface DeleteOperationOptions<TTable extends BaseTable> {
@@ -20,7 +19,7 @@ export const createDeleteOperation =
     db,
     getSession,
   }: {
-    db: NodePgDatabase<Record<string, unknown>>;
+    db: AnyDatabase;
     getSession: (req: NextRequest) => Promise<{ userId?: string } | undefined>;
   }) =>
   <TTable extends BaseTable>({

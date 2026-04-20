@@ -1,10 +1,8 @@
 import { z, ZodSchema } from "zod";
-import { BaseTable, GetListRelations } from "@/backend/types";
+import { BaseTable, GetListRelations, AnyDatabase } from "@/backend/types";
 import { SelectedFields } from "drizzle-orm/pg-core/query-builders/select.types";
 import { getListQuery } from "@/backend/actions/get-list-query";
 import { getListData } from "@/backend/actions/get-list-data";
-import { NodePgDatabase } from "drizzle-orm/node-postgres";
-
 export function createGetListAction<
   T extends ZodSchema,
   TTable extends BaseTable,
@@ -16,7 +14,7 @@ export function createGetListAction<
   table,
 }: {
   bodySchema: T;
-  db: NodePgDatabase<Record<string, unknown>>;
+  db: AnyDatabase;
   jsonArrayFields?: string[];
   relations?: GetListRelations;
   table: TTable;

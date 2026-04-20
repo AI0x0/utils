@@ -1,8 +1,7 @@
 import { z, ZodSchema } from "zod";
 import { transformBody } from "./transform-body";
-import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
-import { BaseTable } from "@/backend/types";
+import { BaseTable, AnyDatabase } from "@/backend/types";
 import { createGetAction } from "@/backend";
 
 export function createPutAction<T extends ZodSchema, TTable extends BaseTable>({
@@ -10,7 +9,7 @@ export function createPutAction<T extends ZodSchema, TTable extends BaseTable>({
   table,
 }: {
   bodySchema: T;
-  db: NodePgDatabase<Record<string, unknown>>;
+  db: AnyDatabase;
   table: TTable;
 }) {
   return async (

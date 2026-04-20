@@ -1,4 +1,5 @@
 import { z, ZodSchema } from "zod";
+import { AnyDatabase } from "@/backend/types";
 import { PgTable } from "drizzle-orm/pg-core";
 import { NextRequest } from "next/server";
 import {
@@ -8,8 +9,6 @@ import {
 } from "next-rest-framework";
 import getTableName from "./get-table-name";
 import { createPostAction } from "../actions";
-import { NodePgDatabase } from "drizzle-orm/node-postgres";
-
 export interface PostOperationOptions<
   IB extends ZodSchema,
   OB extends ZodSchema,
@@ -33,7 +32,7 @@ export const createPostOperation =
     getSession,
     db,
   }: {
-    db: NodePgDatabase<Record<string, unknown>>;
+    db: AnyDatabase;
     getSession: (req: NextRequest) => Promise<{ userId?: string } | undefined>;
   }) =>
   <IB extends ZodSchema, OB extends ZodSchema, TTable extends PgTable>({

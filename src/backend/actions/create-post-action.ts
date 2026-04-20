@@ -1,6 +1,6 @@
 import { z, ZodSchema } from "zod";
+import { AnyDatabase } from "@/backend/types";
 import { PgTable } from "drizzle-orm/pg-core";
-import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { transformBody } from "./transform-body";
 
 export function createPostAction<T extends ZodSchema, TTable extends PgTable>({
@@ -8,7 +8,7 @@ export function createPostAction<T extends ZodSchema, TTable extends PgTable>({
   db,
 }: {
   bodySchema: T;
-  db: NodePgDatabase<Record<string, unknown>>;
+  db: AnyDatabase;
   table: TTable;
 }) {
   return async (body: z.infer<T>): Promise<z.infer<T>[]> => {

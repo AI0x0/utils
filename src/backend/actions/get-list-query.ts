@@ -1,4 +1,4 @@
-import { BaseTable, GetListRelations } from "@/backend/types";
+import { BaseTable, GetListRelations, AnyDatabase } from "@/backend/types";
 import { PgTable } from "drizzle-orm/pg-core";
 import { SelectedFields } from "drizzle-orm/pg-core/query-builders/select.types";
 import {
@@ -15,8 +15,6 @@ import {
   sql,
   SQL,
 } from "drizzle-orm";
-import { NodePgDatabase } from "drizzle-orm/node-postgres";
-
 export function getListQuery<
   TTable extends BaseTable,
   TSelection extends SelectedFields,
@@ -28,7 +26,7 @@ export function getListQuery<
   relations,
   table,
 }: {
-  db: NodePgDatabase<Record<string, unknown>>;
+  db: AnyDatabase;
   fields: TSelection;
   jsonArrayFields?: string[];
   params: {

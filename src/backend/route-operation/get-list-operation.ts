@@ -8,8 +8,7 @@ import {
 import getTableName from "./get-table-name";
 import { listBodySchema } from "@/backend/schemas";
 import { createGetListAction } from "@/backend/actions";
-import { NodePgDatabase } from "drizzle-orm/node-postgres";
-import { BaseTable, GetListRelations } from "@/backend/types";
+import { BaseTable, GetListRelations, AnyDatabase } from "@/backend/types";
 
 export interface GetListOperationOptions<
   T extends ZodSchema,
@@ -43,7 +42,7 @@ export const createGetListOperation =
     db,
     getSession,
   }: {
-    db: NodePgDatabase<Record<string, unknown>>;
+    db: AnyDatabase;
     getSession: (req: NextRequest) => Promise<{ userId?: string } | undefined>;
   }) =>
   <T extends ZodSchema, Q extends ZodSchema, TTable extends BaseTable>({

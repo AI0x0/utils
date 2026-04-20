@@ -1,6 +1,5 @@
-import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
-import { BaseTable } from "@/backend/types";
+import { BaseTable, AnyDatabase } from "@/backend/types";
 import { createGetAction } from "@/backend";
 import { z } from "zod";
 
@@ -8,7 +7,7 @@ export function createDeleteAction<TTable extends BaseTable>({
   table,
   db,
 }: {
-  db: NodePgDatabase<Record<string, unknown>>;
+  db: AnyDatabase;
   table: TTable;
 }) {
   return async ({ id, creatorId }: { id: string; creatorId?: string }) => {

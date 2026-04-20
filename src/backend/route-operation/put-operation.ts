@@ -7,9 +7,8 @@ import {
 } from "next-rest-framework";
 import getTableName from "@/backend/route-operation/get-table-name";
 import { createPutAction } from "@/backend/actions";
-import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { NextRequest } from "next/server";
-import { BaseTable } from "@/backend/types";
+import { BaseTable, AnyDatabase } from "@/backend/types";
 
 export interface PutOperationOptions<
   IB extends ZodSchema,
@@ -36,7 +35,7 @@ export const createPutOperation =
     db,
   }: {
     getSession: (req: NextRequest) => Promise<{ userId?: string } | undefined>;
-    db: NodePgDatabase<Record<string, unknown>>;
+    db: AnyDatabase;
   }) =>
   <IB extends ZodSchema, OB extends ZodSchema, TTable extends BaseTable>({
     bodySchema,
