@@ -92,5 +92,15 @@ const child = spawn("father", ["build"], {
 });
 child.on("exit", (code) => {
   restore();
-  process.exit(code ?? 0);
+  if (code && code !== 0) {
+    process.exit(code);
+  }
+  // father 产物里相对 import 是 extensionless 的，Node 原生 ESM 不认。
+  // 这里做一次 post-build：把它们补成 ./x.js 或 ./x/index.js。
+  const fix = spawn("node", ["scripts/fix-ext.mjs"], {
+    cwd: root,
+    stdio: "inherit",
+    shell: false,
+  });
+  fix.on("exit", (c) => process.exit(c ?? 0));
 });
