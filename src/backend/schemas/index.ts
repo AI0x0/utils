@@ -12,6 +12,7 @@ import {
   createSelectSchema,
   createUpdateSchema,
 } from "drizzle-zod";
+import type { Table } from "drizzle-orm";
 
 //============================基本字段============================//
 const timestamptz = (name: string) => timestamp(name, { withTimezone: true });
@@ -28,6 +29,41 @@ export const basicFields = {
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 };
+
+// basicFields 中需要从业务 insert/update schema 中排除的字段。
+// update 保留 id（必填），其他基础字段都由后端自动维护。
+const basicInsertOmit = {
+  id: true,
+  creatorId: true,
+  editorId: true,
+  accessedAt: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
+const basicUpdateOmit = {
+  creatorId: true,
+  editorId: true,
+  accessedAt: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
+/**
+ * 基于 drizzle-zod 生成业务侧 insert schema，自动排除 basicFields
+ * （id / creatorId / editorId / accessedAt / createdAt / updatedAt）。
+ */
+export const createInsertBodySchema = <T extends Table>(table: T) =>
+  (createInsertSchema(table) as unknown as ZodObject).omit(basicInsertOmit);
+
+/**
+ * 基于 drizzle-zod 生成业务侧 update schema，保留 id 为必填，
+ * 其余 basicFields 全部排除。
+ */
+export const createUpdateBodySchema = <T extends Table>(table: T) =>
+  (createUpdateSchema(table) as unknown as ZodObject)
+    .omit(basicUpdateOmit)
+    .required({ id: true });
 
 //============================列表查询字段============================//
 export const queryListSchema = <Incoming extends ZodObject>(schema: Incoming) =>

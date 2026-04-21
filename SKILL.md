@@ -97,14 +97,18 @@ export const { table: agents } = createTableSchema({
 
 ```ts
 // app/(backend)/db/schemas/agent/index.ts
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
-import { queryListSchema } from "@backend/db/schemas";
+import {
+  createInsertBodySchema,
+  createUpdateBodySchema,
+  queryListSchema,
+} from "@backend/db/schemas";
 import { agents } from "./table";
 
 export { agents, agentColumns } from "./table";
 
-export const insertAgentSchema = createInsertSchema(agents).merge(
+export const insertAgentSchema = createInsertBodySchema(agents).merge(
   z.object({
     mcpIds: z.array(z.string()).optional(),
     tags: z.array(z.string()).optional(),
@@ -116,7 +120,12 @@ export const selectAgentSchema = createSelectSchema(agents).merge(
     tags: z.array(z.string()).optional(),
   }),
 );
-export const updateAgentSchema = insertAgentSchema.required({ id: true });
+export const updateAgentSchema = createUpdateBodySchema(agents).merge(
+  z.object({
+    mcpIds: z.array(z.string()).optional(),
+    tags: z.array(z.string()).optional(),
+  }),
+);
 export const queryAgentSchema = insertAgentSchema.partial();
 export const queryListAgentSchema = queryListSchema(
   selectAgentSchema.partial().merge(

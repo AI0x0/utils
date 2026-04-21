@@ -3,9 +3,12 @@ import {
   queryListSchema,
   listBodySchema,
   createTableSchema,
+  createInsertBodySchema,
+  createUpdateBodySchema,
+  basicFields,
 } from "@/backend/schemas";
 import { z } from "zod";
-import { text, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, integer } from "drizzle-orm/pg-core";
 
 describe("queryListSchema", () => {
   const base = z.object({ name: z.string().optional() });
@@ -131,5 +134,33 @@ describe("createTableSchema", () => {
       expect(result.data.current).toBe("1");
       expect(result.data.pageSize).toBe("10");
     }
+  });
+});
+
+describe("createInsertBodySchema / createUpdateBodySchema", () => {
+  const agents = pgTable("agents", {
+    ...basicFields,
+    name: text("name").notNull(),
+    views: integer("views"),
+  });
+
+  it("insert 排除所有基础字段", () => {
+    const schema = createInsertBodySchema(agents);
+    expect(Object.keys(schema.shape).sort()).toEqual(["name", "views"]);
+  });
+
+  it("update 保留 id 且排除其他基础字段", () => {
+    const schema = createUpdateBodySchema(agents);
+    expect(Object.keys(schema.shape).sort()).toEqual(["id", "name", "views"]);
+  });
+
+  it("update 时 id 必填", () => {
+    const schema = createUpdateBodySchema(agents);
+    expect(schema.safeParse({ name: "x" }).success).toBe(false);
+    const ok = schema.safeParse({
+      id: "a1b2c3d4-e5f6-4a7b-8c9d-000000000001",
+      name: "x",
+    });
+    expect(ok.success).toBe(true);
   });
 });
