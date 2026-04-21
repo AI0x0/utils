@@ -60,6 +60,7 @@ export const createDeleteOperation =
             status: 200,
           });
         } catch (e) {
+          if (!(e instanceof HttpError)) console.error(e);
           const response = await onError?.(e as Error);
           if (response) {
             return response;

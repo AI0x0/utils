@@ -115,6 +115,7 @@ export const createGetListOperation =
             { status: 200 },
           );
         } catch (e) {
+          console.error(e);
           const response = await onError?.(e as Error);
           if (response) {
             return response;

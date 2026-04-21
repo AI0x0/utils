@@ -85,6 +85,7 @@ export const createPostOperation =
             : (raw as unknown as z.infer<OB>);
           return TypedNextResponse.json(data as z.infer<OB>, { status: 200 });
         } catch (e) {
+          console.error(e);
           const response = await onError?.(e as Error);
           if (response) {
             return response;
