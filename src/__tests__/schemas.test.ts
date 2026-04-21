@@ -3,12 +3,13 @@ import {
   queryListSchema,
   listBodySchema,
   createTableSchema,
-  createInsertBodySchema,
-  createUpdateBodySchema,
+  BASIC_INSERT_OMIT,
+  BASIC_UPDATE_OMIT,
   basicFields,
 } from "@/backend/schemas";
 import { z } from "zod";
 import { pgTable, text, integer } from "drizzle-orm/pg-core";
+import { createInsertSchema, createUpdateSchema } from "drizzle-zod";
 
 describe("queryListSchema", () => {
   const base = z.object({ name: z.string().optional() });
@@ -137,7 +138,7 @@ describe("createTableSchema", () => {
   });
 });
 
-describe("createInsertBodySchema / createUpdateBodySchema", () => {
+describe("BASIC_INSERT_OMIT / BASIC_UPDATE_OMIT", () => {
   const agents = pgTable("agents", {
     ...basicFields,
     name: text("name").notNull(),
@@ -145,17 +146,21 @@ describe("createInsertBodySchema / createUpdateBodySchema", () => {
   });
 
   it("insert 排除所有基础字段", () => {
-    const schema = createInsertBodySchema(agents);
+    const schema = createInsertSchema(agents).omit(BASIC_INSERT_OMIT);
     expect(Object.keys(schema.shape).sort()).toEqual(["name", "views"]);
   });
 
   it("update 保留 id 且排除其他基础字段", () => {
-    const schema = createUpdateBodySchema(agents);
+    const schema = createUpdateSchema(agents)
+      .omit(BASIC_UPDATE_OMIT)
+      .required({ id: true });
     expect(Object.keys(schema.shape).sort()).toEqual(["id", "name", "views"]);
   });
 
   it("update 时 id 必填", () => {
-    const schema = createUpdateBodySchema(agents);
+    const schema = createUpdateSchema(agents)
+      .omit(BASIC_UPDATE_OMIT)
+      .required({ id: true });
     expect(schema.safeParse({ name: "x" }).success).toBe(false);
     const ok = schema.safeParse({
       id: "a1b2c3d4-e5f6-4a7b-8c9d-000000000001",

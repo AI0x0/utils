@@ -12,7 +12,6 @@ import {
   createSelectSchema,
   createUpdateSchema,
 } from "drizzle-zod";
-import type { Table } from "drizzle-orm";
 
 //============================基本字段============================//
 const timestamptz = (name: string) => timestamp(name, { withTimezone: true });
@@ -30,9 +29,20 @@ export const basicFields = {
   updatedAt: updatedAt(),
 };
 
-// basicFields 中需要从业务 insert/update schema 中排除的字段。
-// update 保留 id（必填），其他基础字段都由后端自动维护。
-const basicInsertOmit = {
+/**
+ * 业务侧 insert schema 需要从 drizzle-zod 生成的 schema 中排除的基础字段。
+ * 这些字段由后端在 createPostAction 中自动写入。
+ *
+ * 使用方式（在业务 schema 中）：
+ *   const insertFooSchema = createInsertSchema(foos)
+ *     .omit(BASIC_INSERT_OMIT)
+ *     .extend({ ... });
+ *
+ * 说明：上游导出为 const 而不是 helper function，是为了避免经过泛型
+ * wrapper 后 TS 把 drizzle-zod 推导出的深层条件 Shape 归约成 Omit，
+ * 从而在下游 `.extend(...)` 时丢失原有字段类型。
+ */
+export const BASIC_INSERT_OMIT = {
   id: true,
   creatorId: true,
   editorId: true,
@@ -41,29 +51,18 @@ const basicInsertOmit = {
   updatedAt: true,
 } as const;
 
-const basicUpdateOmit = {
+/**
+ * 业务侧 update schema 需要从 drizzle-zod 生成的 schema 中排除的基础字段。
+ * update 保留 id（随后用 `.required({ id: true })` 变成必填），其余由
+ * 后端 createPutAction 自动维护。
+ */
+export const BASIC_UPDATE_OMIT = {
   creatorId: true,
   editorId: true,
   accessedAt: true,
   createdAt: true,
   updatedAt: true,
 } as const;
-
-/**
- * 基于 drizzle-zod 生成业务侧 insert schema，自动排除 basicFields
- * （id / creatorId / editorId / accessedAt / createdAt / updatedAt）。
- */
-export const createInsertBodySchema = <T extends Table>(table: T) =>
-  (createInsertSchema(table) as unknown as ZodObject).omit(basicInsertOmit);
-
-/**
- * 基于 drizzle-zod 生成业务侧 update schema，保留 id 为必填，
- * 其余 basicFields 全部排除。
- */
-export const createUpdateBodySchema = <T extends Table>(table: T) =>
-  (createUpdateSchema(table) as unknown as ZodObject)
-    .omit(basicUpdateOmit)
-    .required({ id: true });
 
 //============================列表查询字段============================//
 export const queryListSchema = <Incoming extends ZodObject>(schema: Incoming) =>
@@ -90,11 +89,6 @@ export const listBodySchema = <T extends ZodType>(schema: T) =>
 /**
  * 基于 drizzle + drizzle-zod 快速生成带基础字段（id / 创建时间等）的
  * 表定义以及 select / insert / update / query / list zod schema。
- *
- * 关键点：把合并后的 `basicFields & TColumnsMap` 交给 pgTable 时同时
- * 提供显式泛型参数，返回的 table 会携带完整列类型；drizzle-zod 由此
- * 推导出的 selectSchema 才是强类型的，而不是退化成
- * `z.ZodObject<Record<string, any[] | null>>`。
  */
 export const createTableSchema = <
   TTableName extends string,
@@ -125,13 +119,10 @@ export const createTableSchema = <
 
   const selectSchema = createSelectSchema(table);
   const insertSchema = createInsertSchema(pgTable(name, columns));
-  // id 用 defaultRandom() 避免进入 insert 必填；随后在 zod 层把 id 标为必填
   const updateSchema = createUpdateSchema(
     pgTable(name, { id: uuid("id"), ...columns }),
   ).extend({ id: z.string() });
 
-  // querySchema / queryListSchema 使用手写 zod，避免 selectSchema 泛型通过 .pick / .partial
-  // 扩散，导致外部类型声明过长（TS7056）。运行时行为不变。
   const querySchema = z.object({ id: z.string() });
   const queryListWithSchema = queryListSchema(
     z.object({}).catchall(z.unknown()),
