@@ -10,6 +10,7 @@ import { createPutAction } from "@/backend/actions";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { NextRequest } from "next/server";
 import { BaseTable } from "@/backend/types";
+import { HttpError } from "@/backend/errors";
 
 export interface PutOperationOptions<
   IB extends ZodSchema,
@@ -98,8 +99,12 @@ export const createPutOperation =
           const response = await onError?.(e as Error);
           if (response) {
             return response;
-          } else {
-            throw e;
           }
+          if (e instanceof HttpError) {
+            return TypedNextResponse.json({ message: e.message } as never, {
+              status: e.status,
+            });
+          }
+          throw e;
         }
       });

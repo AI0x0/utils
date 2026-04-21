@@ -5,6 +5,7 @@ import getTableName from "@/backend/route-operation/get-table-name";
 import { createDeleteAction } from "@/backend/actions";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { NextRequest } from "next/server";
+import { HttpError } from "@/backend/errors";
 
 export interface DeleteOperationOptions<TTable extends BaseTable> {
   table: TTable;
@@ -62,8 +63,12 @@ export const createDeleteOperation =
           const response = await onError?.(e as Error);
           if (response) {
             return response;
-          } else {
-            throw e;
           }
+          if (e instanceof HttpError) {
+            return TypedNextResponse.json({ message: e.message } as never, {
+              status: e.status,
+            });
+          }
+          throw e;
         }
       });

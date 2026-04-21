@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { BaseTable } from "@/backend/types";
 import { createGetAction } from "@/backend";
 import { z } from "zod";
+import { HttpError } from "@/backend/errors";
 
 export function createDeleteAction<TTable extends BaseTable>({
   table,
@@ -22,7 +23,7 @@ export function createDeleteAction<TTable extends BaseTable>({
         }),
       })({ creatorId, id });
       if (!data) {
-        throw Error("未找到删除对象，或没有权限");
+        throw new HttpError(404, "未找到删除对象，或没有权限");
       }
     }
     return db.delete(table).where(eq(table.id, id)).returning();

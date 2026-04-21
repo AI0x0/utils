@@ -4,6 +4,7 @@ import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
 import { BaseTable } from "@/backend/types";
 import { createGetAction } from "@/backend";
+import { HttpError } from "@/backend/errors";
 
 export function createPutAction<T extends ZodSchema, TTable extends BaseTable>({
   db,
@@ -34,7 +35,7 @@ export function createPutAction<T extends ZodSchema, TTable extends BaseTable>({
         id: body.id as string,
       });
       if (!data) {
-        throw Error("未找到编辑对象，或没有权限");
+        throw new HttpError(404, "未找到编辑对象，或没有权限");
       }
     }
     const [data] = await db
