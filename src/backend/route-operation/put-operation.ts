@@ -31,7 +31,7 @@ export interface PutOperationOptions<
   byCreator?: boolean;
 }
 
-export const createPutOperation =
+export const createPutOperation: any =
   ({
     getSession,
     db,
@@ -70,31 +70,30 @@ export const createPutOperation =
       .handler(async (req) => {
         try {
           const { userId } = (await getSession(req)) || {};
-          const body = Object.assign(
-            await req.json(),
+          const body = (await req.json()) as Record<string, unknown>;
+          const extraBody =
             (await setBody?.(
               req as unknown as TypedNextRequest<
                 "PUT",
                 "application/json",
                 z.infer<IB>
               >,
-            )) || {},
-          );
+            )) || {};
+          const mergedBody = { ...body, ...extraBody } as unknown as Record<
+            string,
+            unknown
+          >;
           const raw = await createPutAction({
             bodySchema,
             table,
             db,
-          })(
-            {
-              editorId: userId,
-              ...body,
-            },
-            { byCreator },
-          );
+          })({ editorId: userId, ...mergedBody } as any, { byCreator });
           const data = onSuccess
             ? await onSuccess(raw as unknown as z.infer<OB>)
             : (raw as unknown as z.infer<OB>);
-          return TypedNextResponse.json(data as z.infer<OB>, { status: 200 });
+          return TypedNextResponse.json(data as z.infer<OB>, {
+            status: 200,
+          }) as any;
         } catch (e) {
           if (!(e instanceof HttpError)) console.error(e);
           const response = await onError?.(e as Error);

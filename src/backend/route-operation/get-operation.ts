@@ -31,7 +31,7 @@ export interface GetOperationOptions<
   byCreator?: boolean;
 }
 
-export const createGetOperation =
+export const createGetOperation: any =
   ({
     getSession,
     db,
@@ -102,7 +102,9 @@ export const createGetOperation =
           if (onSuccess) {
             result = await onSuccess(result);
           }
-          return TypedNextResponse.json(result as z.infer<T>, { status: 200 });
+          return TypedNextResponse.json(result as z.infer<T>, {
+            status: 200,
+          }) as any;
         } catch (e) {
           console.error(e);
           const response = await onError?.(e as Error);

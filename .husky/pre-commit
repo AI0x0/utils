@@ -1,4 +1,11 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
+echo "=== Lint staged files ==="
 npx --no-install lint-staged
+
+echo "=== TypeScript check ==="
+npx --no-install tsc --noEmit
+
+echo "=== Running tests ==="
+npx --no-install vitest run

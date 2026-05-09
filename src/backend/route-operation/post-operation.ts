@@ -28,7 +28,7 @@ export interface PostOperationOptions<
   table: TTable;
 }
 
-export const createPostOperation =
+export const createPostOperation: any =
   ({
     getSession,
     db,
@@ -66,24 +66,29 @@ export const createPostOperation =
       .handler(async (req) => {
         try {
           const { userId } = (await getSession(req)) || {};
-          const body = Object.assign(
-            await req.json(),
+          const body = (await req.json()) as Record<string, unknown>;
+          const extraBody =
             (await setBody?.(
               req as unknown as TypedNextRequest<
                 "POST",
                 "application/json",
                 z.infer<IB>
               >,
-            )) || {},
-          );
+            )) || {};
+          const mergedBody = { ...body, ...extraBody } as unknown as Record<
+            string,
+            unknown
+          >;
           const [raw] = await createPostAction({ bodySchema, db, table })({
             creatorId: userId,
-            ...body,
-          });
+            ...mergedBody,
+          } as any);
           const data = onSuccess
             ? await onSuccess(raw as unknown as z.infer<OB>)
             : (raw as unknown as z.infer<OB>);
-          return TypedNextResponse.json(data as z.infer<OB>, { status: 200 });
+          return TypedNextResponse.json(data as z.infer<OB>, {
+            status: 200,
+          }) as any;
         } catch (e) {
           console.error(e);
           const response = await onError?.(e as Error);

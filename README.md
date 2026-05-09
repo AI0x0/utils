@@ -25,10 +25,10 @@ Custom ESLint 9 flat-config rules ported from production projects. All enabled v
 
 ```js
 // eslint.config.js
-import localPlugin from "./eslint-rules/index.js";
+import ai0x0Plugin from "./eslint-rules/index.js";
 
 export default [
-  localPlugin.configs.recommended,
+  ai0x0Plugin.configs.recommended,
   // ... other config
 ];
 ```

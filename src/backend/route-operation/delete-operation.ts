@@ -16,7 +16,7 @@ export interface DeleteOperationOptions<TTable extends BaseTable> {
   ) => Promise<ReturnType<(typeof TypedNextResponse)["json"]> | undefined>;
   byCreator?: boolean;
 }
-export const createDeleteOperation =
+export const createDeleteOperation: any =
   ({
     db,
     getSession,

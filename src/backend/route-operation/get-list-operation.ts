@@ -38,7 +38,7 @@ export interface GetListOperationOptions<
   ) => Promise<ReturnType<(typeof TypedNextResponse)["json"]> | undefined>;
 }
 
-export const createGetListOperation =
+export const createGetListOperation: any =
   ({
     db,
     getSession,
@@ -113,7 +113,7 @@ export const createGetListOperation =
           return TypedNextResponse.json(
             result as { data: z.infer<T>[]; total: number },
             { status: 200 },
-          );
+          ) as any;
         } catch (e) {
           console.error(e);
           const response = await onError?.(e as Error);

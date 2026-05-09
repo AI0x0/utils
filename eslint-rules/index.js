@@ -29,9 +29,9 @@ const plugin = {
   rules,
   configs: {
     recommended: {
-      plugins: { local: { rules } },
+      plugins: { ai0x0: { rules } },
       rules: Object.fromEntries(
-        Object.keys(rules).map((name) => [`local/${name}`, "error"]),
+        Object.keys(rules).map((name) => [`ai0x0/${name}`, "error"]),
       ),
     },
   },
