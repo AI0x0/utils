@@ -1,6 +1,6 @@
 # @ai0x0/utils
 
-AI0x0 shared utilities — backend CRUD factories for Next.js App Router + drizzle-orm, and custom ESLint rules.
+AI0x0 shared utilities — backend CRUD factories for Next.js App Router + drizzle-orm, custom ESLint rules and presets.
 
 ## Backend (`src/backend/`)
 
@@ -15,20 +15,20 @@ Declarative CRUD factories on top of `next-rest-framework`, `drizzle-orm/pg-core
 | `createDeleteOperation`  | DELETE | Delete a record                          |
 | `createTableSchema`      | —      | Generate pg table + 5 Zod schemas        |
 
-**Built-in conventions:** base fields (`id`, `creatorId`, `editorId`, `createdAt`, `updatedAt`, `accessedAt`), ownership checks via `byCreator`, automatic date coercion, pagination (`current`/`pageSize`/`orderBy`/`orderDir`), list filtering with `ILIKE`, `IN`, `jsonb` array matching, and relation joins.
-
 See [SKILL.md](./SKILL.md) for detailed workflow, setup, and escape hatches.
 
-## ESLint Rules (`eslint-rules/`)
+## ESLint Rules & Config
 
-Custom ESLint 9 flat-config rules ported from production projects. All enabled via `configs.recommended`:
+### Plugin (`eslint-rules/`)
+
+Custom ESLint 9 flat-config rules. All enabled via `configs.recommended`:
 
 ```js
 // eslint.config.js
-import ai0x0Plugin from "./eslint-rules/index.js";
+import { ai0x0 } from "@ai0x0/utils/eslint-config/index.js";
 
 export default [
-  ai0x0Plugin.configs.recommended,
+  ai0x0.configs.recommended,
   // ... other config
 ];
 ```
@@ -45,6 +45,37 @@ export default [
 | `no-use-request-run`      | Forbid `useRequest.run()`               |
 | `require-use-form`        | Use `useForm()` for form state          |
 | `require-form-convention` | Form naming conventions                 |
+
+### Shared restrictions (`eslint-config/`)
+
+Pre-defined `no-restricted-syntax` selectors for antd + ahooks convention enforcement:
+
+```js
+import {
+  ai0x0,
+  allRestrictions,
+  allRestrictionsWithNetworking,
+} from "@ai0x0/utils/eslint-config/index.js";
+
+export default [
+  ai0x0.configs.recommended,
+  // ... Prettier + TypeScript configs ...
+  // Backend code
+  {
+    files: ["app/(backend)/**/*.ts"],
+    rules: { "no-restricted-syntax": ["error", ...allRestrictions] },
+  },
+  // Frontend code (also restricts fetch / WebSocket)
+  {
+    files: ["app/(frontend)/**/*.ts"],
+    rules: {
+      "no-restricted-syntax": ["error", ...allRestrictionsWithNetworking],
+    },
+  },
+];
+```
+
+Restrictions cover: `TryStatement`, `as` (non-const), `useState`, `useEffect`, `useMemo`, `useCallback`, native `div/span/p/h` tags, hardcoded colors, `fetch` and `new WebSocket()`.
 
 ## Installation
 

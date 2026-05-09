@@ -1,4 +1,4 @@
-import localPlugin from "./eslint-rules/index.js";
+import { ai0x0 } from "./eslint-config/index.js";
 import { FlatCompat } from "@eslint/eslintrc";
 import js from "@eslint/js";
 import nextConfig from "eslint-config-next/core-web-vitals";
@@ -12,7 +12,7 @@ const eslintConfig = [
   {
     ignores: ["**/dist/**", "**/es/**", "**/lib/**", "**/.dumi/**"],
   },
-  localPlugin.configs.recommended,
+  ai0x0.configs.recommended,
   ...nextConfig,
   ...compat.config({
     extends: [
@@ -23,15 +23,18 @@ const eslintConfig = [
     parser: "@typescript-eslint/parser",
     plugins: ["eslint-plugin-prettier", "@typescript-eslint"],
     rules: {
-      "prettier/prettier": [
-        "error",
-        {
-          endOfLine: "auto",
-        },
-      ],
+      "prettier/prettier": ["error", { endOfLine: "auto" }],
       "@typescript-eslint/no-explicit-any": 0,
     },
   }),
+  {
+    rules: {
+      "max-lines": [
+        "error",
+        { max: 500, skipBlankLines: true, skipComments: true },
+      ],
+    },
+  },
 ];
 
 export default eslintConfig;

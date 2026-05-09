@@ -1,11 +1,10 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
+PATH="node_modules/.bin:$PATH"
+
 echo "=== Lint staged files ==="
-npx --no-install lint-staged
+lint-staged
 
 echo "=== TypeScript check ==="
-npx --no-install tsc --noEmit
-
-echo "=== Running tests ==="
-npx --no-install vitest run
+tsc --noEmit

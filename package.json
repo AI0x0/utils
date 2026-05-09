@@ -1,6 +1,6 @@
 {
   "name": "@ai0x0/utils",
-  "version": "0.0.29",
+  "version": "0.0.30",
   "description": "AI0x0 utils",
   "keywords": [
     "ai0x0"
@@ -20,10 +20,11 @@
   "module": "./es/index.js",
   "types": "./lib/index.d.ts",
   "files": [
-    "eslint-rules",
-    "lib",
+    "SKILL.md",
     "es",
-    "SKILL.md"
+    "eslint-config",
+    "eslint-rules",
+    "lib"
   ],
   "scripts": {
     "build": "node scripts/build.mjs",
