@@ -30,9 +30,12 @@ const plugin = {
   configs: {
     recommended: {
       plugins: { ai0x0: { rules } },
-      rules: Object.fromEntries(
-        Object.keys(rules).map((name) => [`ai0x0/${name}`, "error"]),
-      ),
+      rules: {
+        ...Object.fromEntries(
+          Object.keys(rules).map((name) => [`ai0x0/${name}`, "error"]),
+        ),
+        curly: "error",
+      },
     },
   },
 };

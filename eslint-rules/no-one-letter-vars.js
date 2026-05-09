@@ -29,24 +29,37 @@ const rule = {
     return {
       // --- 变量声名 ---
       VariableDeclarator(node) {
-        if (!node.id || node.id.type !== "Identifier") return;
+        if (!node.id || node.id.type !== "Identifier") {
+          return;
+        }
         const name = node.id.name;
-        if (name.length !== 1 || !/^[a-z]$/.test(name)) return;
+        if (name.length !== 1 || !/^[a-z]$/.test(name)) {
+          return;
+        }
 
         // Skip `_`
-        if (name === "_") return;
+        if (name === "_") {
+          return;
+        }
 
-        // Skip if inside for loop (for (let i = 0..))
-        let parent = node.parent;
-        while (parent) {
+        // Skip only the loop variable itself in for...of/for...in (for (const x of arr))
+        // NOT single-letter vars declared inside the loop body
+        const declParent = node.parent;
+        if (declParent && declParent.type === "VariableDeclaration") {
+          const declGrandparent = declParent.parent;
           if (
-            parent.type === "ForStatement" ||
-            parent.type === "ForInStatement" ||
-            parent.type === "ForOfStatement"
+            declGrandparent &&
+            (declGrandparent.type === "ForOfStatement" ||
+              declGrandparent.type === "ForInStatement") &&
+            declParent.declarations.length === 1 &&
+            declParent.declarations[0] === node
           ) {
             return;
           }
-          parent = parent.parent;
+          // Also skip the iterator in for (let i = 0; ...)
+          if (declGrandparent && declGrandparent.type === "ForStatement") {
+            return;
+          }
         }
 
         context.report({
@@ -85,7 +98,9 @@ const rule = {
 
     function checkPattern(pattern, ctx) {
       for (const prop of pattern.properties || pattern.elements || []) {
-        if (!prop) continue;
+        if (!prop) {
+          continue;
+        }
         const value =
           prop.type === "RestElement" ? prop.argument : prop.value || prop;
         if (value.type === "Identifier") {

@@ -25,6 +25,7 @@ const eslintConfig = [
     rules: {
       "prettier/prettier": ["error", { endOfLine: "auto" }],
       "@typescript-eslint/no-explicit-any": 0,
+      curly: "error",
     },
   }),
   {
