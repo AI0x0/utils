@@ -1,6 +1,6 @@
 {
   "name": "@ai0x0/utils",
-  "version": "0.0.26",
+  "version": "0.0.27",
   "description": "AI0x0 utils",
   "keywords": [
     "ai0x0"
@@ -20,6 +20,7 @@
   "module": "./es/index.js",
   "types": "./lib/index.d.ts",
   "files": [
+    "eslint-rules",
     "lib",
     "es",
     "SKILL.md"
