@@ -25,7 +25,7 @@ vi.mock("next-rest-framework", () => {
 
 vi.mock("next/server", () => ({
   NextRequest: class {},
-  NextResponse: { json: (d: any) => d },
+  NextResponse: { json: (data: any) => data },
 }));
 
 // mock @/backend 避免 createDeleteAction 内部调用 createGetAction 出错
@@ -89,6 +89,9 @@ function makeReq(body: any = {}, query: Record<string, string> = {}) {
   return { json: vi.fn(async () => body), url } as any;
 }
 
+// ==============================================================================
+// createDeleteOperation
+// ==============================================================================
 // ─── createDeleteOperation ────────────────────────────────────────────────────
 describe("createDeleteOperation", () => {
   const getSession = vi.fn(async () => ({ userId: "user-1" }));
@@ -218,7 +221,7 @@ describe("createPostOperation", () => {
       await import("@/backend/route-operation/post-operation");
     const db = makeDb();
     const bodySchema = z.object({ name: z.string() });
-    const onSuccess = vi.fn(async (d: any) => ({ ...d, extra: true }));
+    const onSuccess = vi.fn(async (data: any) => ({ ...data, extra: true }));
     const operation = createPostOperation({ db, getSession })({
       bodySchema,
       table: testTable,
@@ -280,7 +283,7 @@ describe("createGetListOperation", () => {
     const db = makeDb();
     const bodySchema = z.object({ id: z.string(), name: z.string() });
     const querySchema = z.object({});
-    const onSuccess = vi.fn(async (r: any) => ({ ...r, total: 999 }));
+    const onSuccess = vi.fn(async (result: any) => ({ ...result, total: 999 }));
     const operation = createGetListOperation({ db, getSession })({
       bodySchema,
       querySchema,
@@ -315,6 +318,9 @@ describe("createGetListOperation", () => {
   });
 });
 
+// ==============================================================================
+// createGetOperation
+// ==============================================================================
 // ─── createGetOperation ───────────────────────────────────────────────────────
 describe("createGetOperation", () => {
   const getSession = vi.fn(async () => ({ userId: "user-1" }));
@@ -343,7 +349,7 @@ describe("createGetOperation", () => {
     const db = makeDb();
     const bodySchema = z.object({ id: z.string(), name: z.string() });
     const querySchema = z.object({});
-    const onSuccess = vi.fn(async (d: any) => ({ ...d, extra: true }));
+    const onSuccess = vi.fn(async (data: any) => ({ ...data, extra: true }));
     const operation = createGetOperation({ db, getSession })({
       bodySchema,
       querySchema,
@@ -378,6 +384,9 @@ describe("createGetOperation", () => {
   });
 });
 
+// ==============================================================================
+// createPutOperation
+// ==============================================================================
 // ─── createPutOperation ───────────────────────────────────────────────────────
 describe("createPutOperation", () => {
   const getSession = vi.fn(async () => ({ userId: "user-1" }));
@@ -423,7 +432,7 @@ describe("createPutOperation", () => {
       await import("@/backend/route-operation/put-operation");
     const db = makeDb();
     const bodySchema = z.object({ id: z.string(), name: z.string() });
-    const onSuccess = vi.fn(async (d: any) => ({ ...d, patched: true }));
+    const onSuccess = vi.fn(async (data: any) => ({ ...data, patched: true }));
     const operation = createPutOperation({ db, getSession })({
       bodySchema,
       table: testTable,

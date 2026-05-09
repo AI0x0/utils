@@ -1,3 +1,4 @@
+import localPlugin from "./eslint-rules/index.js";
 import { FlatCompat } from "@eslint/eslintrc";
 import js from "@eslint/js";
 import nextConfig from "eslint-config-next/core-web-vitals";
@@ -11,6 +12,7 @@ const eslintConfig = [
   {
     ignores: ["**/dist/**", "**/es/**", "**/lib/**", "**/.dumi/**"],
   },
+  localPlugin.configs.recommended,
   ...nextConfig,
   ...compat.config({
     extends: [

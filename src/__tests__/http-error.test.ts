@@ -24,7 +24,7 @@ vi.mock("next-rest-framework", () => {
 
 vi.mock("next/server", () => ({
   NextRequest: class {},
-  NextResponse: { json: (d: any) => d },
+  NextResponse: { json: (data: any) => data },
 }));
 
 // 让 createGetAction 返回 undefined，模拟「未找到/无权限」

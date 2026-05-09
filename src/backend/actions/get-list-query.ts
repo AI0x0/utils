@@ -36,6 +36,9 @@ export function getListQuery<
     [field: string]: unknown;
     // 每页条数
     orderBy?: keyof BaseTable;
+    // ==============================================================================
+    // Query Builder Functions
+    // ==============================================================================
     // 排序字段
     orderDir?: "asc" | "desc";
     page?: number;
@@ -95,7 +98,7 @@ export function getListQuery<
           ?.filter(({ table }) => table)
           .map(({ table }) => table as BaseTable) || [],
       )
-      .find((t) => t[key])?.[key] as Column;
+      .find((table) => table[key])?.[key] as Column;
   }
 
   // 添加条件
@@ -113,7 +116,7 @@ export function getListQuery<
         // 处理多值
         const values = value
           .split(",")
-          .map((v) => v.trim())
+          .map((val) => val.trim())
           .filter(Boolean);
 
         if (values.length > 0) {
@@ -132,7 +135,7 @@ export function getListQuery<
           } else {
             conditions.push(
               or(
-                ...values.map((v: string) => ilike(targetColumn, `%${v}%`)),
+                ...values.map((val: string) => ilike(targetColumn, `%${val}%`)),
               ) as SQL,
             );
           }
