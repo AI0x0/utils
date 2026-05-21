@@ -187,41 +187,52 @@ for (const key of TOKEN_KEYS) {
 }
 
 function isTokenExpr(node) {
-  if (!node) return false;
+  if (!node) {
+    return false;
+  }
   if (
     node.type === "MemberExpression" &&
     node.object.type === "Identifier" &&
     node.object.name === "token"
-  )
+  ) {
     return true;
+  }
   if (
     node.type === "CallExpression" &&
     node.callee.type === "Identifier" &&
     ["token", "calc", "max", "min", "clamp"].includes(node.callee.name)
-  )
+  ) {
     return true;
+  }
   return false;
 }
 
 function isAllowedValue(node) {
-  if (!node) return true;
-  if (isTokenExpr(node)) return true;
-  if (node.type === "Literal" && (node.value === 0 || node.value === "0"))
+  if (!node) {
     return true;
+  }
+  if (isTokenExpr(node)) {
+    return true;
+  }
+  if (node.type === "Literal" && (node.value === 0 || node.value === "0")) {
+    return true;
+  }
   if (
     node.type === "Literal" &&
     typeof node.value === "string" &&
     ALLOWED_LITERALS.has(node.value)
-  )
+  ) {
     return true;
+  }
   if (
     node.type === "Literal" &&
     typeof node.value === "string" &&
     /^(\d+(\.\d+)?(px|em|rem|%|vh|vw|vmin|vmax|ex|ch|cm|mm|in|pt|pc)|\d+(\.\d+)?\s+(px|em|rem)\s+(solid|dashed|dotted)|\d+\.?\d*%)$/.test(
       node.value,
     )
-  )
+  ) {
     return true;
+  }
   if (
     [
       "ConditionalExpression",
@@ -233,25 +244,33 @@ function isAllowedValue(node) {
       "Identifier",
       "SpreadElement",
     ].includes(node.type)
-  )
+  ) {
     return true;
-  if (node.type === "ObjectExpression" || node.type === "ArrayExpression")
+  }
+  if (node.type === "ObjectExpression" || node.type === "ArrayExpression") {
     return true;
+  }
   return false;
 }
 
 function checkStyleObject(context, objExpr) {
   for (const prop of objExpr.properties) {
-    if (prop.type !== "Property") continue;
+    if (prop.type !== "Property") {
+      continue;
+    }
     const key =
       prop.key.type === "Identifier"
         ? prop.key.name
         : prop.key.type === "Literal"
           ? prop.key.value
           : null;
-    if (!key || !TOKEN_KEYS.has(key)) continue;
+    if (!key || !TOKEN_KEYS.has(key)) {
+      continue;
+    }
     const val = prop.value;
-    if (isAllowedValue(val)) continue;
+    if (isAllowedValue(val)) {
+      continue;
+    }
     const valText = context.getSourceCode().getText(val);
     context.report({
       node: prop,
@@ -270,7 +289,9 @@ function checkCssTemplate(context, node) {
   let fullText = "";
   for (let i = 0; i < quasis.length; i++) {
     fullText += quasis[i].value.raw;
-    if (i < expressions.length) fullText += "${EXPR}";
+    if (i < expressions.length) {
+      fullText += "${EXPR}";
+    }
   }
 
   // 按行分割，逐行检查
@@ -278,7 +299,9 @@ function checkCssTemplate(context, node) {
   for (const line of lines) {
     // 简单解析：找冒号分割的 property: value
     const colonIdx = line.indexOf(":");
-    if (colonIdx === -1) continue;
+    if (colonIdx === -1) {
+      continue;
+    }
 
     const rawProp = line.slice(0, colonIdx).trim();
     const rawVal = line
@@ -292,29 +315,42 @@ function checkCssTemplate(context, node) {
       rawProp.startsWith("&") ||
       rawProp.startsWith("@") ||
       rawProp.startsWith("//")
-    )
+    ) {
       continue;
+    }
 
     // 匹配 camelCase 或 kebab-case 属性
     const camelProp = TOKEN_KEYS.has(rawProp)
       ? rawProp
       : KEBAB_TO_CAMEL[rawProp];
-    if (!camelProp) continue;
+    if (!camelProp) {
+      continue;
+    }
 
     // 值包含 ${EXPR} → 被插值打断或完全由表达式提供 → 跳过
-    if (rawVal.includes("${EXPR}")) continue;
+    if (rawVal.includes("${EXPR}")) {
+      continue;
+    }
 
     // 0 值
-    if (rawVal === "0" || rawVal === "0px") continue;
+    if (rawVal === "0" || rawVal === "0px") {
+      continue;
+    }
 
     // CSS 关键字白名单
-    if (ALLOWED_LITERALS.has(rawVal)) continue;
+    if (ALLOWED_LITERALS.has(rawVal)) {
+      continue;
+    }
 
     // 纯百分比 → 允许（布局常用）
-    if (/^\d+\.?\d*%$/.test(rawVal)) continue;
+    if (/^\d+\.?\d*%$/.test(rawVal)) {
+      continue;
+    }
 
     // 100vh / 100vw → 允许（全屏布局）
-    if (/^100(vh|vw)$/.test(rawVal)) continue;
+    if (/^100(vh|vw)$/.test(rawVal)) {
+      continue;
+    }
 
     // 百分比 / 带单位字符串 → 硬编码（token 体系也有 sizeStep/sizeUnit）
     if (
@@ -339,6 +375,10 @@ function checkCssTemplate(context, node) {
   }
 }
 
+// ==============================================================================
+// ESLint 规则
+// ==============================================================================
+
 /** @type {import('eslint').Rule.RuleModule} */
 const rule = {
   meta: {
@@ -350,15 +390,19 @@ const rule = {
     schema: [],
     messages: {
       noHardcoded:
-        "禁止硬编码 `{{ {{key}}: {{value}} }}`。请使用 antd token（如 `token.marginSM`、`token.colorPrimary`）。可参考 .codex/skills/ant-design/SKILL.md 了解 token 体系。",
+        "禁止硬编码 `{{ {{key}}: {{value}} }}`。请使用 antd token（如 `token.marginSM`、`token.colorPrimary`）。可参考 node_modules/@ai0x0/utils/.agents/skills/antd/SKILL.md 了解 token 体系。",
     },
   },
   create(context) {
     return {
       JSXAttribute(node) {
-        if (node.name.name !== "style") return;
+        if (node.name.name !== "style") {
+          return;
+        }
         const expr = node.value?.expression;
-        if (!expr || expr.type !== "ObjectExpression") return;
+        if (!expr || expr.type !== "ObjectExpression") {
+          return;
+        }
         checkStyleObject(context, expr);
       },
 
@@ -372,40 +416,54 @@ const rule = {
         if (
           node.callee.type !== "Identifier" ||
           node.callee.name !== "createStyles"
-        )
+        ) {
           return;
+        }
         const arg = node.arguments[0];
-        if (!arg) return;
+        if (!arg) {
+          return;
+        }
 
         if (arg.type === "ObjectExpression") {
           for (const prop of arg.properties) {
-            if (prop.type !== "Property") continue;
-            if (prop.value.type === "ObjectExpression")
+            if (prop.type !== "Property") {
+              continue;
+            }
+            if (prop.value.type === "ObjectExpression") {
               checkStyleObject(context, prop.value);
-            else if (
+            } else if (
               prop.value.type === "TaggedTemplateExpression" &&
               prop.value.tag.name === "css"
-            )
+            ) {
               checkCssTemplate(context, prop.value);
+            }
           }
           return;
         }
 
         let body = null;
-        if (arg.type === "ArrowFunctionExpression") body = arg.body;
-        else if (arg.type === "FunctionExpression") body = arg.body;
-        if (!body) return;
+        if (arg.type === "ArrowFunctionExpression") {
+          body = arg.body;
+        } else if (arg.type === "FunctionExpression") {
+          body = arg.body;
+        }
+        if (!body) {
+          return;
+        }
 
         if (body.type === "ObjectExpression") {
           for (const prop of body.properties) {
-            if (prop.type !== "Property") continue;
-            if (prop.value.type === "ObjectExpression")
+            if (prop.type !== "Property") {
+              continue;
+            }
+            if (prop.value.type === "ObjectExpression") {
               checkStyleObject(context, prop.value);
-            else if (
+            } else if (
               prop.value.type === "TaggedTemplateExpression" &&
               prop.value.tag.name === "css"
-            )
+            ) {
               checkCssTemplate(context, prop.value);
+            }
           }
           return;
         }
@@ -417,14 +475,17 @@ const rule = {
               stmt.argument?.type === "ObjectExpression"
             ) {
               for (const prop of stmt.argument.properties) {
-                if (prop.type !== "Property") continue;
-                if (prop.value.type === "ObjectExpression")
+                if (prop.type !== "Property") {
+                  continue;
+                }
+                if (prop.value.type === "ObjectExpression") {
                   checkStyleObject(context, prop.value);
-                else if (
+                } else if (
                   prop.value.type === "TaggedTemplateExpression" &&
                   prop.value.tag.name === "css"
-                )
+                ) {
                   checkCssTemplate(context, prop.value);
+                }
               }
             }
           }

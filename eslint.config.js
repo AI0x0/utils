@@ -15,13 +15,9 @@ const eslintConfig = [
   ai0x0.configs.recommended,
   ...nextConfig,
   ...compat.config({
-    extends: [
-      "prettier",
-      "eslint:recommended",
-      "plugin:@typescript-eslint/recommended",
-    ],
+    extends: ["prettier", "eslint:recommended"],
     parser: "@typescript-eslint/parser",
-    plugins: ["eslint-plugin-prettier", "@typescript-eslint"],
+    plugins: ["eslint-plugin-prettier"],
     rules: {
       "prettier/prettier": ["error", { endOfLine: "auto" }],
       "@typescript-eslint/no-explicit-any": 0,

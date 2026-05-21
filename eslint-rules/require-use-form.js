@@ -23,7 +23,7 @@ const rule = {
     schema: [],
     messages: {
       useFormRequired:
-        "检测到表单场景使用了 useState/useSetState 管理字段值。请改用 Form.useForm() 或 rc-field-form 的 useForm。详见 .agents/skills/form-convention/SKILL.md。",
+        "检测到表单场景使用了 useState/useSetState 管理字段值。请改用 Form.useForm() 或 rc-field-form 的 useForm。详见 node_modules/@ai0x0/utils/.agents/skills/antd/SKILL.md。",
     },
   },
   create(context) {
@@ -39,16 +39,23 @@ const rule = {
 
     return {
       JSXOpeningElement(node) {
-        if (hasFormPattern) return;
+        if (hasFormPattern) {
+          return;
+        }
 
         let hasValue = false;
         let hasOnChange = false;
 
         for (const attr of node.attributes) {
-          if (attr.type !== "JSXAttribute" || !attr.name) continue;
+          if (attr.type !== "JSXAttribute" || !attr.name) {
+            continue;
+          }
           const attrName = attr.name.name;
-          if (attrName === "value") hasValue = true;
-          else if (attrName === "onChange") hasOnChange = true;
+          if (attrName === "value") {
+            hasValue = true;
+          } else if (attrName === "onChange") {
+            hasOnChange = true;
+          }
 
           if (hasValue && hasOnChange) {
             hasFormPattern = true;

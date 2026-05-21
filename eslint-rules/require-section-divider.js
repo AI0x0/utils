@@ -9,7 +9,7 @@
  *   - 550 ~ 749 行：至少 3 个分区块
  *   以此类推，每 200 行增加 1 个分区块。
  *
- * 分隔注释块格式（见 .agents/skills/dev-style/SKILL.md）：
+ * 分隔注释块格式（见 node_modules/@ai0x0/utils/.agents/skills/nextjs/SKILL.md）：
  *
  *   // ==============================================================================
  *   // <中文标题>
@@ -22,24 +22,39 @@ const DIVIDER_EQ = /^\s*={4,}\s*$/;
 
 /** 相邻两行注释 + 之间中间一行文字：判定一个三行注释块为分隔块。 */
 function isDividerBlock(commentA, commentB, commentC) {
-  if (!commentA || !commentB || !commentC) return false;
+  if (!commentA || !commentB || !commentC) {
+    return false;
+  }
   if (
     commentA.type !== "Line" ||
     commentB.type !== "Line" ||
     commentC.type !== "Line"
-  )
+  ) {
     return false;
-  if (!DIVIDER_EQ.test(commentA.value)) return false;
-  if (!DIVIDER_EQ.test(commentC.value)) return false;
-  if (!commentB.value.trim()) return false;
-  if (commentA.loc.end.line + 1 !== commentB.loc.start.line) return false;
-  if (commentB.loc.end.line + 1 !== commentC.loc.start.line) return false;
+  }
+  if (!DIVIDER_EQ.test(commentA.value)) {
+    return false;
+  }
+  if (!DIVIDER_EQ.test(commentC.value)) {
+    return false;
+  }
+  if (!commentB.value.trim()) {
+    return false;
+  }
+  if (commentA.loc.end.line + 1 !== commentB.loc.start.line) {
+    return false;
+  }
+  if (commentB.loc.end.line + 1 !== commentC.loc.start.line) {
+    return false;
+  }
   return true;
 }
 
 /** 计算文件需要多少个分区块（每 150 行 1 个，从 150 行起）。 */
 function requiredDividers(totalLines, minLines) {
-  if (totalLines < minLines) return 0;
+  if (totalLines < minLines) {
+    return 0;
+  }
   // 150-299: 1个, 300-449: 2个, 依此类推
   return Math.floor(totalLines / minLines);
 }
@@ -74,10 +89,14 @@ const rule = {
     return {
       Program(program) {
         const totalLines = program.loc.end.line;
-        if (totalLines < minLines) return;
+        if (totalLines < minLines) {
+          return;
+        }
 
         const required = requiredDividers(totalLines, minLines);
-        if (required <= 0) return;
+        if (required <= 0) {
+          return;
+        }
 
         const allComments = sourceCode.getAllComments();
 
