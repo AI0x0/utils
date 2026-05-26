@@ -75,6 +75,7 @@ export default [
 | `no-use-request-run`      | Forbid `useRequest.run()`               |
 | `require-use-form`        | Use `useForm()` for form state          |
 | `require-form-convention` | Form naming conventions                 |
+| `max-lines`               | Limit each file to 500 code lines       |
 
 ### Shared restrictions (`eslint-config/`)
 

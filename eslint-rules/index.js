@@ -35,6 +35,10 @@ const plugin = {
           Object.keys(rules).map((name) => [`ai0x0/${name}`, "error"]),
         ),
         curly: "error",
+        "max-lines": [
+          "error",
+          { max: 500, skipBlankLines: true, skipComments: true },
+        ],
       },
     },
   },
