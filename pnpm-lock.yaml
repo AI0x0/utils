@@ -9,6 +9,10 @@ overrides:
 
 importers:
   .:
+    dependencies:
+      next-rest-framework:
+        specifier: github:mushan0x0/next-rest-framework#pkg
+        version: https://codeload.github.com/mushan0x0/next-rest-framework/tar.gz/44b1f81c9ed01a97504cba0fc84020d6f927a4b0
     devDependencies:
       "@commitlint/cli":
         specifier: ^20.5.0
@@ -64,9 +68,6 @@ importers:
       next:
         specifier: ^16.2.6
         version: 16.2.6(@babel/core@7.29.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(sass@1.54.0)
-      next-rest-framework:
-        specifier: github:mushan0x0/next-rest-framework#pkg
-        version: https://codeload.github.com/mushan0x0/next-rest-framework/tar.gz/44b1f81c9ed01a97504cba0fc84020d6f927a4b0
       prettier:
         specifier: ^3.8.3
         version: 3.8.3

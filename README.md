@@ -17,6 +17,47 @@ Declarative CRUD factories on top of `next-rest-framework`, `drizzle-orm/pg-core
 
 See [SKILL.md](./SKILL.md) for detailed workflow, setup, and escape hatches.
 
+## SQLite Backend (`src/backend/sqlite/`)
+
+Projects that use a local SQLite database can import the same CRUD factory surface from `@ai0x0/utils/es/backend/sqlite`.
+
+```ts
+import {
+  createTableSchema,
+  queryListSchema,
+} from "@ai0x0/utils/es/backend/sqlite/schemas/index.js";
+import {
+  createGetOperation,
+  createPostOperation,
+} from "@ai0x0/utils/es/backend/sqlite/index.js";
+```
+
+The SQLite helpers mirror the PostgreSQL helpers, but use `drizzle-orm/sqlite-core`, SQLite `LIKE`, and `json_each(...)` for JSON-array filtering.
+
+Focused SQLite coverage should verify:
+
+1. `createTableSchema` generates SQLite tables with the base fields: `id`, `creatorId`, `editorId`, `accessedAt`, `createdAt`, and `updatedAt`.
+2. `queryListSchema` preserves pagination defaults.
+3. `createGetListAction` works with SQLite query builders that expose `.all()`.
+4. `getListData` executes plain queries directly and does not depend on `next-rest-framework` RPC wrappers.
+5. `createPostAction` and `createPutAction` normalize `*At` fields through `transformBody`.
+6. String filters use SQLite `LIKE`, comma-separated id filters use `inArray`, JSON-array filters use `json_each(...)`, and date range filters map `createdAtFrom` / `createdAtTo` to the matching timestamp column.
+
+Run the focused SQLite tests:
+
+```bash
+pnpm test -- src/__tests__/sqlite-actions.test.ts src/__tests__/sqlite-schemas.test.ts
+```
+
+Run the full package checks before publishing:
+
+```bash
+pnpm test
+pnpm exec tsc --noEmit
+pnpm build
+npm pack --dry-run --json
+```
+
 ## Agent Skills
 
 This package also ships reusable project skills under `.agents/skills`:
@@ -114,7 +155,7 @@ Restrictions cover: `TryStatement`, `as` (non-const), `useState`, `useEffect`, `
 pnpm add @ai0x0/utils
 ```
 
-Peer dependencies: `drizzle-orm ^0.45.x`, `drizzle-zod ^0.8.x`, `zod ^4.x`.
+Peer dependencies: `drizzle-orm ^0.45.x`, `drizzle-zod ^0.8.x`, `next ^16.x`, `next-rest-framework`, `zod ^4.x`.
 
 ## Docs
 
