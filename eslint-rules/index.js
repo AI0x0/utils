@@ -11,6 +11,7 @@ import noUseRequestRun from "./no-use-request-run.js";
 import noThen from "./no-then.js";
 import noOneLetterVars from "./no-one-letter-vars.js";
 import noConsecutiveSetState from "./no-consecutive-setstate.js";
+import maxLines from "./max-lines.js";
 
 const rules = {
   "require-section-divider": requireSectionDivider,
@@ -23,6 +24,7 @@ const rules = {
   "no-then": noThen,
   "no-one-letter-vars": noOneLetterVars,
   "no-consecutive-setstate": noConsecutiveSetState,
+  "max-lines": maxLines,
 };
 
 const plugin = {
@@ -35,7 +37,7 @@ const plugin = {
           Object.keys(rules).map((name) => [`ai0x0/${name}`, "error"]),
         ),
         curly: "error",
-        "max-lines": [
+        "ai0x0/max-lines": [
           "error",
           { max: 500, skipBlankLines: true, skipComments: true },
         ],

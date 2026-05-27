@@ -63,19 +63,19 @@ export default [
 ];
 ```
 
-| Rule                      | Description                             |
-| ------------------------- | --------------------------------------- |
-| `no-hardcoded-style`      | Forbid hardcoded style values           |
-| `no-one-letter-vars`      | Forbid single-letter variable names     |
-| `no-then`                 | Prefer `async/await` over `.then()`     |
-| `no-antd-space`           | Use `<Flex>` instead of `<Space>`       |
-| `require-pro-components`  | Require ProComponents usage             |
-| `require-section-divider` | Large files need `===` comment dividers |
-| `no-consecutive-setstate` | Merge consecutive `setState` calls      |
-| `no-use-request-run`      | Forbid `useRequest.run()`               |
-| `require-use-form`        | Use `useForm()` for form state          |
-| `require-form-convention` | Form naming conventions                 |
-| `max-lines`               | Limit each file to 500 code lines       |
+| Rule                      | Description                                                             |
+| ------------------------- | ----------------------------------------------------------------------- |
+| `no-hardcoded-style`      | Forbid hardcoded style values                                           |
+| `no-one-letter-vars`      | Forbid single-letter variable names                                     |
+| `no-then`                 | Prefer `async/await` over `.then()`                                     |
+| `no-antd-space`           | Use `<Flex>` instead of `<Space>`                                       |
+| `require-pro-components`  | Require ProComponents usage                                             |
+| `require-section-divider` | Large files need `===` comment dividers                                 |
+| `no-consecutive-setstate` | Merge consecutive `setState` calls                                      |
+| `no-use-request-run`      | Forbid `useRequest.run()`                                               |
+| `require-use-form`        | Use `useForm()` for form state                                          |
+| `require-form-convention` | Form naming conventions                                                 |
+| `max-lines`               | Limit each file to 500 code lines and prompt splitting into child files |
 
 ### Shared restrictions (`eslint-config/`)
 
