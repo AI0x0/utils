@@ -1,18 +1,3 @@
-/**
- * no-hardcoded-style
- * ------------------
- * 禁止在 JSX style / createStyles / css`` 中直接写死样式值。
- * 强制使用 antd token（theme.useToken() 或 createStyles(({token}) => ...)）。
- *
- * 白名单：
- *   - token.xxx / token() / calc(...) 表达式
- *   - 0 值
- *   - CSS 功能性关键字（auto, none, hidden, pointer 等）
- *   - 百分比 / 带单位字符串
- *   - 条件/逻辑/变量/函数调用（无法静态判断）
- *   - css\`...\` 中的 \${token.xxx} 插值
- */
-
 // ==============================================================================
 // 白名单
 // ==============================================================================
@@ -22,6 +7,8 @@ const ALLOWED_LITERALS = new Set([
   "none",
   "hidden",
   "visible",
+  "transparent",
+  "inherit",
   "pre-wrap",
   "pre",
   "normal",
@@ -160,9 +147,6 @@ const TOKEN_KEYS = new Set([
   "lineHeight",
   "letterSpacing",
   "boxShadow",
-  "textShadow",
-  "opacity",
-  "zIndex",
   "width",
   "height",
   "minWidth",
@@ -207,6 +191,39 @@ function isTokenExpr(node) {
   return false;
 }
 
+function containsTokenExpr(node) {
+  if (!node) {
+    return false;
+  }
+  if (isTokenExpr(node)) {
+    return true;
+  }
+  switch (node.type) {
+    case "BinaryExpression":
+    case "LogicalExpression":
+      return containsTokenExpr(node.left) || containsTokenExpr(node.right);
+    case "UnaryExpression":
+      return containsTokenExpr(node.argument);
+    case "ConditionalExpression":
+      return [node.test, node.consequent, node.alternate].some((child) =>
+        containsTokenExpr(child),
+      );
+    case "CallExpression":
+      return [node.callee, ...node.arguments].some((child) =>
+        containsTokenExpr(child),
+      );
+    case "TemplateLiteral":
+      return node.expressions.some((expr) => containsTokenExpr(expr));
+    case "MemberExpression":
+      return containsTokenExpr(node.object) || containsTokenExpr(node.property);
+    default:
+      return false;
+  }
+}
+
+const CSS_GLUE_KEYWORDS =
+  /\b(auto|none|hidden|visible|transparent|inherit|currentColor|important|calc|min|max|clamp|var|pre-wrap|pre|normal|pointer|default|move|not-allowed|grab|grabbing|center|flex-start|flex-end|space-between|space-around|left|right|top|bottom|start|end|solid|dashed|dotted|double|groove|ridge|inset|outset|block|inline-block|inline|flex|grid|contents|row|column|row-reverse|column-reverse|wrap|nowrap|wrap-reverse|relative|absolute|fixed|sticky|static|bold|bolder|lighter|italic|oblique|uppercase|lowercase|capitalize|underline|overline|line-through|blink|collapse|separate|border-box|content-box|padding-box|contain|cover|fill|scale-down)\b/g;
+
 function isAllowedValue(node) {
   if (!node) {
     return true;
@@ -242,6 +259,7 @@ function isAllowedValue(node) {
       "TemplateLiteral",
       "CallExpression",
       "Identifier",
+      "MemberExpression",
       "SpreadElement",
     ].includes(node.type)
   ) {
@@ -251,6 +269,69 @@ function isAllowedValue(node) {
     return true;
   }
   return false;
+}
+
+function normalizeCssValue(value) {
+  return value
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isAllowedCssLiteralValue(value) {
+  const normalized = normalizeCssValue(value);
+  if (!normalized) {
+    return true;
+  }
+  if (
+    normalized === "0" ||
+    normalized === "0px" ||
+    ALLOWED_LITERALS.has(normalized)
+  ) {
+    return true;
+  }
+  if (
+    /^\d+\.?\d*%$/.test(normalized) ||
+    /^100(vh|vw)$/.test(normalized) ||
+    normalized === "1"
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function stripAllowedExpressionGlue(value) {
+  return value
+    .replace(/\$\{EXPR_\d+\}/g, " ")
+    .replace(/\b100(vh|vw)\b/g, " ")
+    .replace(/\b(px|em|rem|%|vh|vw|vmin|vmax|ex|ch|cm|mm|in|pt|pc)\b/g, " ")
+    .replace(CSS_GLUE_KEYWORDS, " ")
+    .replace(/\b0\b/g, " ")
+    .replace(/\b100\b/g, " ")
+    .replace(/[(),/+\-%!]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function hasHardcodedCssLiteral(value) {
+  const normalized = normalizeCssValue(value);
+  if (isAllowedCssLiteralValue(normalized)) {
+    return false;
+  }
+  if (/#[0-9a-fA-F]{3,8}\b/.test(normalized)) {
+    return true;
+  }
+  if (
+    /\b(?:rgb|rgba|hsl|hsla|oklch|oklab|linear-gradient|radial-gradient)\(/i.test(
+      normalized,
+    )
+  ) {
+    return true;
+  }
+  if (/\b-?\d*\.?\d+\b/.test(stripAllowedExpressionGlue(normalized))) {
+    return true;
+  }
+  return stripAllowedExpressionGlue(normalized).length > 0;
 }
 
 function checkStyleObject(context, objExpr) {
@@ -290,7 +371,7 @@ function checkCssTemplate(context, node) {
   for (let i = 0; i < quasis.length; i++) {
     fullText += quasis[i].value.raw;
     if (i < expressions.length) {
-      fullText += "${EXPR}";
+      fullText += `\${EXPR_${i}}`;
     }
   }
 
@@ -327,46 +408,25 @@ function checkCssTemplate(context, node) {
       continue;
     }
 
-    // 值包含 ${EXPR} → 被插值打断或完全由表达式提供 → 跳过
-    if (rawVal.includes("${EXPR}")) {
-      continue;
-    }
+    const expressionIndexes = [...rawVal.matchAll(/\$\{EXPR_(\d+)\}/g)].map(
+      (match) => Number(match[1]),
+    );
 
-    // 0 值
-    if (rawVal === "0" || rawVal === "0px") {
-      continue;
-    }
-
-    // CSS 关键字白名单
-    if (ALLOWED_LITERALS.has(rawVal)) {
-      continue;
-    }
-
-    // 纯百分比 → 允许（布局常用）
-    if (/^\d+\.?\d*%$/.test(rawVal)) {
-      continue;
-    }
-
-    // 100vh / 100vw → 允许（全屏布局）
-    if (/^100(vh|vw)$/.test(rawVal)) {
-      continue;
-    }
-
-    // 百分比 / 带单位字符串 → 硬编码（token 体系也有 sizeStep/sizeUnit）
+    // 完全由非 token 变量 / 函数提供的值无法静态判断，保持兼容。
     if (
-      /^(\d+(\.\d+)?(px|em|rem|%|vh|vw|vmin|vmax|ex|ch|cm|mm|in|pt|pc)|\d+\.?\d*%)$/.test(
-        rawVal,
-      )
+      expressionIndexes.length > 0 &&
+      expressionIndexes.every(
+        (index) => !containsTokenExpr(expressions[index]),
+      ) &&
+      !hasHardcodedCssLiteral(rawVal)
     ) {
-      context.report({
-        node: template,
-        messageId: "noHardcoded",
-        data: { key: rawProp, value: rawVal },
-      });
       continue;
     }
 
-    // 剩余 → 硬编码
+    if (!hasHardcodedCssLiteral(rawVal)) {
+      continue;
+    }
+
     context.report({
       node: template,
       messageId: "noHardcoded",
@@ -431,11 +491,6 @@ const rule = {
             }
             if (prop.value.type === "ObjectExpression") {
               checkStyleObject(context, prop.value);
-            } else if (
-              prop.value.type === "TaggedTemplateExpression" &&
-              prop.value.tag.name === "css"
-            ) {
-              checkCssTemplate(context, prop.value);
             }
           }
           return;
@@ -458,11 +513,6 @@ const rule = {
             }
             if (prop.value.type === "ObjectExpression") {
               checkStyleObject(context, prop.value);
-            } else if (
-              prop.value.type === "TaggedTemplateExpression" &&
-              prop.value.tag.name === "css"
-            ) {
-              checkCssTemplate(context, prop.value);
             }
           }
           return;
@@ -480,11 +530,6 @@ const rule = {
                 }
                 if (prop.value.type === "ObjectExpression") {
                   checkStyleObject(context, prop.value);
-                } else if (
-                  prop.value.type === "TaggedTemplateExpression" &&
-                  prop.value.tag.name === "css"
-                ) {
-                  checkCssTemplate(context, prop.value);
                 }
               }
             }
