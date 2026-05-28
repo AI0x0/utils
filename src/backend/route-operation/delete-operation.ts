@@ -8,12 +8,12 @@ import { NextRequest } from "next/server";
 import { HttpError } from "@/backend/errors";
 
 export interface DeleteOperationOptions<TTable extends BaseTable> {
-  table: TTable;
+  table?: TTable;
   summary?: string;
   onSuccess?: () => Promise<void>;
-  onError?: (
+  onError?(
     error: Error,
-  ) => Promise<ReturnType<(typeof TypedNextResponse)["json"]> | undefined>;
+  ): Promise<ReturnType<(typeof TypedNextResponse)["json"]> | undefined>;
   byCreator?: boolean;
 }
 export const createDeleteOperation: any =
@@ -22,7 +22,7 @@ export const createDeleteOperation: any =
     getSession,
   }: {
     db: NodePgDatabase<Record<string, unknown>>;
-    getSession: (req: NextRequest) => Promise<{ userId?: string } | undefined>;
+    getSession(req: NextRequest): Promise<{ userId?: string } | undefined>;
   }) =>
   <TTable extends BaseTable>({
     table,
@@ -35,7 +35,7 @@ export const createDeleteOperation: any =
       method: "DELETE",
       openApiOperation: {
         summary,
-        tags: [getTableName(table)],
+        tags: table ? [getTableName(table)] : [],
       },
     })
       .input({
@@ -54,13 +54,17 @@ export const createDeleteOperation: any =
             const { userId } = (await getSession(req)) || {};
             body.creatorId = userId;
           }
-          const data = await createDeleteAction({ table, db })(body);
+          const data = table
+            ? await createDeleteAction({ table, db })(body)
+            : body;
           await onSuccess?.();
           return TypedNextResponse.json(data, {
             status: 200,
           });
         } catch (e) {
-          if (!(e instanceof HttpError)) console.error(e);
+          if (!(e instanceof HttpError)) {
+            console.error(e);
+          }
           const response = await onError?.(e as Error);
           if (response) {
             return response;

@@ -17,15 +17,15 @@ export interface PostOperationOptions<
 > {
   bodySchema: IB;
   outputBodySchema?: IB;
-  setBody?: (
+  setBody?(
     req: TypedNextRequest<"POST", "application/json", z.infer<IB>>,
-  ) => Promise<Partial<z.infer<IB>>>;
+  ): Promise<Partial<z.infer<IB>>>;
   summary?: string;
-  onSuccess?: (data: z.infer<OB>) => Promise<z.infer<OB>>;
-  onError?: (
+  onSuccess?(data: z.infer<OB>): Promise<z.infer<OB>>;
+  onError?(
     error: Error,
-  ) => Promise<ReturnType<(typeof TypedNextResponse)["json"]> | undefined>;
-  table: TTable;
+  ): Promise<ReturnType<(typeof TypedNextResponse)["json"]> | undefined>;
+  table?: TTable;
 }
 
 export const createPostOperation: any =
@@ -34,7 +34,7 @@ export const createPostOperation: any =
     db,
   }: {
     db: NodePgDatabase<Record<string, unknown>>;
-    getSession: (req: NextRequest) => Promise<{ userId?: string } | undefined>;
+    getSession(req: NextRequest): Promise<{ userId?: string } | undefined>;
   }) =>
   <IB extends ZodSchema, OB extends ZodSchema, TTable extends PgTable>({
     bodySchema,
@@ -49,7 +49,7 @@ export const createPostOperation: any =
       method: "POST",
       openApiOperation: {
         summary,
-        tags: [getTableName(table)],
+        tags: table ? [getTableName(table)] : [],
       },
     })
       .input({
@@ -79,10 +79,14 @@ export const createPostOperation: any =
             string,
             unknown
           >;
-          const [raw] = await createPostAction({ bodySchema, db, table })({
-            creatorId: userId,
-            ...mergedBody,
-          } as any);
+          const raw = table
+            ? (
+                await createPostAction({ bodySchema, db, table })({
+                  creatorId: userId,
+                  ...mergedBody,
+                } as any)
+              )[0]
+            : ({ creatorId: userId, ...mergedBody } as z.infer<OB>);
           const data = onSuccess
             ? await onSuccess(raw as unknown as z.infer<OB>)
             : (raw as unknown as z.infer<OB>);

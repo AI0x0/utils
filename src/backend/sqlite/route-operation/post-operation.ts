@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { z, ZodSchema } from "zod";
 import { SQLiteTable } from "drizzle-orm/sqlite-core";
 import { NextRequest } from "next/server";
@@ -25,7 +24,7 @@ export interface PostOperationOptions<
   onError?: (
     _error: Error,
   ) => Promise<ReturnType<(typeof TypedNextResponse)["json"]> | undefined>;
-  table: TTable;
+  table?: TTable;
 }
 
 export const createPostOperation: any =
@@ -49,7 +48,7 @@ export const createPostOperation: any =
       method: "POST",
       openApiOperation: {
         summary,
-        tags: [getTableName(table)],
+        tags: table ? [getTableName(table)] : [],
       },
     })
       .input({
@@ -79,10 +78,14 @@ export const createPostOperation: any =
             string,
             unknown
           >;
-          const [raw] = await createPostAction({ bodySchema, db, table })({
-            creatorId: userId,
-            ...mergedBody,
-          } as any);
+          const raw = table
+            ? (
+                await createPostAction({ bodySchema, db, table })({
+                  creatorId: userId,
+                  ...mergedBody,
+                } as any)
+              )[0]
+            : ({ creatorId: userId, ...mergedBody } as z.infer<OB>);
           const data = onSuccess
             ? await onSuccess(raw as unknown as z.infer<OB>)
             : (raw as unknown as z.infer<OB>);

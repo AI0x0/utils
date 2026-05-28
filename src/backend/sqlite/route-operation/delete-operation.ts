@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { routeOperation, TypedNextResponse } from "next-rest-framework";
 import { z } from "zod";
 import { BaseTable } from "@/backend/sqlite/types";
@@ -8,7 +7,7 @@ import { NextRequest } from "next/server";
 import { HttpError } from "@/backend/sqlite/errors";
 
 export interface DeleteOperationOptions<TTable extends BaseTable> {
-  table: TTable;
+  table?: TTable;
   summary?: string;
   onSuccess?: () => Promise<void>;
   onError?: (
@@ -35,7 +34,7 @@ export const createDeleteOperation: any =
       method: "DELETE",
       openApiOperation: {
         summary,
-        tags: [getTableName(table)],
+        tags: table ? [getTableName(table)] : [],
       },
     })
       .input({
@@ -54,7 +53,9 @@ export const createDeleteOperation: any =
             const { userId } = (await getSession(req)) || {};
             body.creatorId = userId;
           }
-          const data = await createDeleteAction({ table, db })(body);
+          const data = table
+            ? await createDeleteAction({ table, db })(body)
+            : body;
           await onSuccess?.();
           return TypedNextResponse.json(data, {
             status: 200,

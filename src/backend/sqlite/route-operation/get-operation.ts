@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { z, ZodSchema } from "zod";
 import { NextRequest } from "next/server";
 import {
@@ -27,7 +26,7 @@ export interface GetOperationOptions<
     _error: Error,
   ) => Promise<ReturnType<(typeof TypedNextResponse)["json"]> | undefined>;
   summary?: string;
-  table: TTable;
+  table?: TTable;
   byCreator?: boolean;
 }
 
@@ -55,7 +54,7 @@ export const createGetOperation: any =
       method: "GET",
       openApiOperation: {
         summary,
-        tags: [getTableName(table)],
+        tags: table ? [getTableName(table)] : [],
       },
     })
       .input({
@@ -86,18 +85,19 @@ export const createGetOperation: any =
             params.creatorId = userId;
           }
 
-          const rawResult = await createGetAction({
-            bodySchema,
-            db,
-            jsonArrayFields,
-            relations,
-            table,
-          })(
-            Object.assign(
-              Object.fromEntries(new URL(req.url).searchParams),
-              params,
-            ) as Partial<z.infer<T>> & Record<string, unknown>,
-          );
+          const mergedParams = Object.assign(
+            Object.fromEntries(new URL(req.url).searchParams),
+            params,
+          ) as Partial<z.infer<T>> & Record<string, unknown>;
+          const rawResult = table
+            ? await createGetAction({
+                bodySchema,
+                db,
+                jsonArrayFields,
+                relations,
+                table,
+              })(mergedParams)
+            : mergedParams;
           let result = (rawResult ?? ({} as z.infer<T>)) as z.infer<T>;
           if (onSuccess) {
             result = await onSuccess(result);

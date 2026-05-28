@@ -19,15 +19,15 @@ export interface PutOperationOptions<
 > {
   bodySchema: IB;
   outputBodySchema?: OB;
-  table: TTable;
+  table?: TTable;
   summary?: string;
-  setBody?: (
+  setBody?(
     req: TypedNextRequest<"PUT", "application/json", z.infer<IB>>,
-  ) => Promise<Partial<z.infer<IB>>>;
-  onSuccess?: (data: z.infer<OB>) => Promise<z.infer<OB>>;
-  onError?: (
+  ): Promise<Partial<z.infer<IB>>>;
+  onSuccess?(data: z.infer<OB>): Promise<z.infer<OB>>;
+  onError?(
     error: Error,
-  ) => Promise<ReturnType<(typeof TypedNextResponse)["json"]> | undefined>;
+  ): Promise<ReturnType<(typeof TypedNextResponse)["json"]> | undefined>;
   byCreator?: boolean;
 }
 
@@ -36,7 +36,7 @@ export const createPutOperation: any =
     getSession,
     db,
   }: {
-    getSession: (req: NextRequest) => Promise<{ userId?: string } | undefined>;
+    getSession(req: NextRequest): Promise<{ userId?: string } | undefined>;
     db: NodePgDatabase<Record<string, unknown>>;
   }) =>
   <IB extends ZodSchema, OB extends ZodSchema, TTable extends BaseTable>({
@@ -53,7 +53,7 @@ export const createPutOperation: any =
       method: "PUT",
       openApiOperation: {
         summary,
-        tags: [getTableName(table)],
+        tags: table ? [getTableName(table)] : [],
       },
     })
       .input({
@@ -83,11 +83,13 @@ export const createPutOperation: any =
             string,
             unknown
           >;
-          const raw = await createPutAction({
-            bodySchema,
-            table,
-            db,
-          })({ editorId: userId, ...mergedBody } as any, { byCreator });
+          const raw = table
+            ? await createPutAction({
+                bodySchema,
+                table,
+                db,
+              })({ editorId: userId, ...mergedBody } as any, { byCreator })
+            : ({ editorId: userId, ...mergedBody } as z.infer<OB>);
           const data = onSuccess
             ? await onSuccess(raw as unknown as z.infer<OB>)
             : (raw as unknown as z.infer<OB>);
@@ -95,7 +97,9 @@ export const createPutOperation: any =
             status: 200,
           }) as any;
         } catch (e) {
-          if (!(e instanceof HttpError)) console.error(e);
+          if (!(e instanceof HttpError)) {
+            console.error(e);
+          }
           const response = await onError?.(e as Error);
           if (response) {
             return response;

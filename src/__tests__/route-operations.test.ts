@@ -3,7 +3,7 @@ import { z } from "zod";
 import { pgTable, text } from "drizzle-orm/pg-core";
 import { basicFields } from "@/backend/schemas";
 
-type Operation = { _handler: (req: any) => Promise<any> };
+type Operation = { _handler(req: any): Promise<any> };
 
 // ─── mock next-rest-framework ────────────────────────────────────────────────
 vi.mock("next-rest-framework", () => {
@@ -140,6 +140,20 @@ describe("createDeleteOperation", () => {
     expect(onSuccess).toHaveBeenCalled();
   });
 
+  it("不传 table 时跳过删除表操作", async () => {
+    const { createDeleteOperation } =
+      await import("@/backend/route-operation/delete-operation");
+    const db = makeDb();
+    const operation = createDeleteOperation({ db, getSession })({
+      byCreator: false,
+    });
+    const res = await (operation as unknown as Operation)._handler(
+      makeReq({ id: "id-1" }),
+    );
+    expect(db.delete).not.toHaveBeenCalled();
+    expect(res.data.id).toBe("id-1");
+  });
+
   it("onError 拦截异常并返回自定义响应", async () => {
     const { createDeleteOperation } =
       await import("@/backend/route-operation/delete-operation");
@@ -234,6 +248,25 @@ describe("createPostOperation", () => {
     expect(res.data.extra).toBe(true);
   });
 
+  it("不传 table 时跳过插入表操作", async () => {
+    const { createPostOperation } =
+      await import("@/backend/route-operation/post-operation");
+    const db = makeDb();
+    const bodySchema = z.object({ name: z.string() });
+    const onSuccess = vi.fn(async (data: any) => ({ ...data, ok: true }));
+    const operation = createPostOperation({ db, getSession })({
+      bodySchema,
+      onSuccess,
+    });
+    const res = await (operation as unknown as Operation)._handler(
+      makeReq({ name: "test" }),
+    );
+    expect(db.insert).not.toHaveBeenCalled();
+    expect(onSuccess).toHaveBeenCalled();
+    expect(res.data.name).toBe("test");
+    expect(res.data.ok).toBe(true);
+  });
+
   it("onError 拦截异常", async () => {
     const { createPostOperation } =
       await import("@/backend/route-operation/post-operation");
@@ -293,6 +326,27 @@ describe("createGetListOperation", () => {
     const res = await (operation as unknown as Operation)._handler(makeReq());
     expect(onSuccess).toHaveBeenCalled();
     expect(res.data.total).toBe(999);
+  });
+
+  it("不传 table 时跳过列表表查询", async () => {
+    const { createGetListOperation } =
+      await import("@/backend/route-operation/get-list-operation");
+    const db = makeDb();
+    const bodySchema = z.object({ id: z.string(), name: z.string() });
+    const querySchema = z.object({});
+    const onSuccess = vi.fn(async () => ({
+      data: [{ id: "virtual", name: "manual" }],
+      total: 1,
+    }));
+    const operation = createGetListOperation({ db, getSession })({
+      bodySchema,
+      querySchema,
+      onSuccess,
+    });
+    const res = await (operation as unknown as Operation)._handler(makeReq());
+    expect(db.select).not.toHaveBeenCalled();
+    expect(onSuccess).toHaveBeenCalledWith({ data: [], total: 0 });
+    expect(res.data.total).toBe(1);
   });
 
   it("onError 拦截异常", async () => {
@@ -359,6 +413,27 @@ describe("createGetOperation", () => {
     const res = await (operation as unknown as Operation)._handler(makeReq());
     expect(onSuccess).toHaveBeenCalled();
     expect(res.data.extra).toBe(true);
+  });
+
+  it("不传 table 时跳过详情表查询", async () => {
+    const { createGetOperation } =
+      await import("@/backend/route-operation/get-operation");
+    const db = makeDb();
+    const bodySchema = z.object({
+      id: z.string(),
+      name: z.string().optional(),
+    });
+    const querySchema = z.object({ id: z.string().optional() });
+    const operation = createGetOperation({ db, getSession })({
+      bodySchema,
+      querySchema,
+      byCreator: false,
+    });
+    const res = await (operation as unknown as Operation)._handler(
+      makeReq({}, { id: "id-1" }),
+    );
+    expect(db.select).not.toHaveBeenCalled();
+    expect(res.data.id).toBe("id-1");
   });
 
   it("onError 拦截异常", async () => {
@@ -444,6 +519,22 @@ describe("createPutOperation", () => {
     );
     expect(onSuccess).toHaveBeenCalled();
     expect(res.data.patched).toBe(true);
+  });
+
+  it("不传 table 时跳过更新表操作", async () => {
+    const { createPutOperation } =
+      await import("@/backend/route-operation/put-operation");
+    const db = makeDb();
+    const bodySchema = z.object({ id: z.string(), name: z.string() });
+    const operation = createPutOperation({ db, getSession })({
+      bodySchema,
+      byCreator: false,
+    });
+    const res = await (operation as unknown as Operation)._handler(
+      makeReq({ id: "id-1", name: "updated" }),
+    );
+    expect(db.update).not.toHaveBeenCalled();
+    expect(res.data.name).toBe("updated");
   });
 
   it("onError 拦截异常", async () => {

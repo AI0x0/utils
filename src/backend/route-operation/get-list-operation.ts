@@ -20,22 +20,22 @@ export interface GetListOperationOptions<
   jsonArrayFields?: string[];
   querySchema: Q;
   relations?: GetListRelations;
-  setParams?: (
+  setParams?(
     req: TypedNextRequest<"GET", "application/json", unknown, z.infer<Q>>,
-  ) => Promise<Record<string, unknown>>;
+  ): Promise<Record<string, unknown>>;
   byCreator?: boolean;
   summary?: string;
-  table: TTable;
-  onSuccess?: <D extends T>(data: {
+  table?: TTable;
+  onSuccess?<D extends T>(data: {
     data: z.infer<D>[];
     total: number;
-  }) => Promise<{
+  }): Promise<{
     data: z.infer<T>[];
     total: number;
   }>;
-  onError?: (
+  onError?(
     error: Error,
-  ) => Promise<ReturnType<(typeof TypedNextResponse)["json"]> | undefined>;
+  ): Promise<ReturnType<(typeof TypedNextResponse)["json"]> | undefined>;
 }
 
 export const createGetListOperation: any =
@@ -44,7 +44,7 @@ export const createGetListOperation: any =
     getSession,
   }: {
     db: NodePgDatabase<Record<string, unknown>>;
-    getSession: (req: NextRequest) => Promise<{ userId?: string } | undefined>;
+    getSession(req: NextRequest): Promise<{ userId?: string } | undefined>;
   }) =>
   <T extends ZodSchema, Q extends ZodSchema, TTable extends BaseTable>({
     querySchema,
@@ -62,7 +62,7 @@ export const createGetListOperation: any =
       method: "GET",
       openApiOperation: {
         summary,
-        tags: [getTableName(table)],
+        tags: table ? [getTableName(table)] : [],
       },
     })
       .input({
@@ -93,18 +93,19 @@ export const createGetListOperation: any =
             params.creatorId = userId;
           }
 
-          let result = await createGetListAction({
-            bodySchema,
-            db,
-            jsonArrayFields,
-            relations,
-            table,
-          })(
-            Object.assign(
-              Object.fromEntries(new URL(req.url).searchParams),
-              params,
-            ) as Partial<z.infer<T>> & Record<string, unknown>,
-          );
+          const mergedParams = Object.assign(
+            Object.fromEntries(new URL(req.url).searchParams),
+            params,
+          ) as Partial<z.infer<T>> & Record<string, unknown>;
+          let result = table
+            ? await createGetListAction({
+                bodySchema,
+                db,
+                jsonArrayFields,
+                relations,
+                table,
+              })(mergedParams)
+            : { data: [], total: 0 };
 
           if (onSuccess) {
             result = await onSuccess(result);

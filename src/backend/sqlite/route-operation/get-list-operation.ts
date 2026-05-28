@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { z, ZodSchema } from "zod";
 import { NextRequest } from "next/server";
 import {
@@ -25,7 +24,7 @@ export interface GetListOperationOptions<
   ) => Promise<Record<string, unknown>>;
   byCreator?: boolean;
   summary?: string;
-  table: TTable;
+  table?: TTable;
   onSuccess?: <D extends T>(_data: {
     data: z.infer<D>[];
     total: number;
@@ -62,7 +61,7 @@ export const createGetListOperation: any =
       method: "GET",
       openApiOperation: {
         summary,
-        tags: [getTableName(table)],
+        tags: table ? [getTableName(table)] : [],
       },
     })
       .input({
@@ -93,18 +92,19 @@ export const createGetListOperation: any =
             params.creatorId = userId;
           }
 
-          let result = await createGetListAction({
-            bodySchema,
-            db,
-            jsonArrayFields,
-            relations,
-            table,
-          })(
-            Object.assign(
-              Object.fromEntries(new URL(req.url).searchParams),
-              params,
-            ) as Partial<z.infer<T>> & Record<string, unknown>,
-          );
+          const mergedParams = Object.assign(
+            Object.fromEntries(new URL(req.url).searchParams),
+            params,
+          ) as Partial<z.infer<T>> & Record<string, unknown>;
+          let result = table
+            ? await createGetListAction({
+                bodySchema,
+                db,
+                jsonArrayFields,
+                relations,
+                table,
+              })(mergedParams)
+            : { data: [], total: 0 };
 
           if (onSuccess) {
             result = (await onSuccess(result as never)) as typeof result;

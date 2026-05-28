@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { z, ZodSchema } from "zod";
 import { SQLiteTable } from "drizzle-orm/sqlite-core";
 import {
@@ -19,7 +18,7 @@ export interface PutOperationOptions<
 > {
   bodySchema: IB;
   outputBodySchema?: OB;
-  table: TTable;
+  table?: TTable;
   summary?: string;
   setBody?: (
     _req: TypedNextRequest<"PUT", "application/json", z.infer<IB>>,
@@ -53,7 +52,7 @@ export const createPutOperation: any =
       method: "PUT",
       openApiOperation: {
         summary,
-        tags: [getTableName(table)],
+        tags: table ? [getTableName(table)] : [],
       },
     })
       .input({
@@ -83,11 +82,13 @@ export const createPutOperation: any =
             string,
             unknown
           >;
-          const raw = await createPutAction({
-            bodySchema,
-            table,
-            db,
-          })({ editorId: userId, ...mergedBody } as any, { byCreator });
+          const raw = table
+            ? await createPutAction({
+                bodySchema,
+                table,
+                db,
+              })({ editorId: userId, ...mergedBody } as any, { byCreator })
+            : ({ editorId: userId, ...mergedBody } as z.infer<OB>);
           const data = onSuccess
             ? await onSuccess(raw as unknown as z.infer<OB>)
             : (raw as unknown as z.infer<OB>);
