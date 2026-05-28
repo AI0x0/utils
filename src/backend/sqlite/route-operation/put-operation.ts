@@ -20,6 +20,7 @@ export interface PutOperationOptions<
   outputBodySchema?: OB;
   table?: TTable;
   summary?: string;
+  tags?: string[];
   setBody?: (
     _req: TypedNextRequest<"PUT", "application/json", z.infer<IB>>,
   ) => Promise<Partial<z.infer<IB>>>;
@@ -43,6 +44,7 @@ export const createPutOperation: any =
     outputBodySchema,
     table,
     summary,
+    tags,
     setBody,
     onSuccess,
     byCreator = true,
@@ -52,7 +54,7 @@ export const createPutOperation: any =
       method: "PUT",
       openApiOperation: {
         summary,
-        tags: table ? [getTableName(table)] : [],
+        tags: tags ?? (table ? [getTableName(table)] : []),
       },
     })
       .input({

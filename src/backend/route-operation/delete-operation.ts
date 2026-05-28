@@ -10,6 +10,7 @@ import { HttpError } from "@/backend/errors";
 export interface DeleteOperationOptions<TTable extends BaseTable> {
   table?: TTable;
   summary?: string;
+  tags?: string[];
   onSuccess?: () => Promise<void>;
   onError?(
     error: Error,
@@ -27,6 +28,7 @@ export const createDeleteOperation: any =
   <TTable extends BaseTable>({
     table,
     summary,
+    tags,
     onSuccess,
     onError,
     byCreator = true,
@@ -35,7 +37,7 @@ export const createDeleteOperation: any =
       method: "DELETE",
       openApiOperation: {
         summary,
-        tags: table ? [getTableName(table)] : [],
+        tags: tags ?? (table ? [getTableName(table)] : []),
       },
     })
       .input({

@@ -64,14 +64,16 @@ export const getListOperation = createGetListOperation({ db, getSession });
 
 ## Factory Catalog
 
-| Export              | Purpose                    | Required options            | Notable optional options                                                                             |
-| ------------------- | -------------------------- | --------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `createTableSchema` | pg `Table` + 5 zod schemas | `name`, `columns`           | `refineSchema`, `extraConfig`                                                                        |
-| `getOperation`      | GET one by filters         | `bodySchema`, `querySchema` | `table`, `setParams`, `relations`, `jsonArrayFields`, `byCreator`, `onSuccess`, `onError`, `summary` |
-| `getListOperation`  | GET paginated list         | `bodySchema`, `querySchema` | `table`, `setParams`, `relations`, `jsonArrayFields`, `onSuccess`, `onError`, `summary`              |
-| `postOperation`     | POST create                | `bodySchema`                | `table`, `outputBodySchema`, `setBody`, `onSuccess`, `onError`, `summary`                            |
-| `putOperation`      | PUT update                 | `bodySchema`                | `table`, `outputBodySchema`, `setBody`, `byCreator`, `onSuccess`, `onError`, `summary`               |
-| `deleteOperation`   | DELETE                     | —                           | `table`, `byCreator`, `onSuccess`, `onError`, `summary`                                              |
+| Export              | Purpose                    | Required options            | Notable optional options                                                                                     |
+| ------------------- | -------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `createTableSchema` | pg `Table` + 5 zod schemas | `name`, `columns`           | `refineSchema`, `extraConfig`                                                                                |
+| `getOperation`      | GET one by filters         | `bodySchema`, `querySchema` | `table`, `setParams`, `relations`, `jsonArrayFields`, `byCreator`, `onSuccess`, `onError`, `summary`, `tags` |
+| `getListOperation`  | GET paginated list         | `bodySchema`, `querySchema` | `table`, `setParams`, `relations`, `jsonArrayFields`, `onSuccess`, `onError`, `summary`, `tags`              |
+| `postOperation`     | POST create                | `bodySchema`                | `table`, `outputBodySchema`, `setBody`, `onSuccess`, `onError`, `summary`, `tags`                            |
+| `putOperation`      | PUT update                 | `bodySchema`                | `table`, `outputBodySchema`, `setBody`, `byCreator`, `onSuccess`, `onError`, `summary`, `tags`               |
+| `deleteOperation`   | DELETE                     | —                           | `table`, `byCreator`, `onSuccess`, `onError`, `summary`, `tags`                                              |
+
+`tags` can be passed manually to override the default OpenAPI tag inferred from `table`.
 
 `table` is optional for route operations. When omitted, the operation still parses input, applies `setParams` / `setBody`, session-derived fields, and `onSuccess`, but skips the built-in table action (`select` / `insert` / `update` / `delete`). Use this for custom endpoints that want the same OpenAPI and response wiring without a direct table operation.
 

@@ -20,6 +20,7 @@ export interface PostOperationOptions<
     _req: TypedNextRequest<"POST", "application/json", z.infer<IB>>,
   ) => Promise<Partial<z.infer<IB>>>;
   summary?: string;
+  tags?: string[];
   onSuccess?: (_data: z.infer<OB>) => Promise<z.infer<OB>>;
   onError?: (
     _error: Error,
@@ -40,6 +41,7 @@ export const createPostOperation: any =
     outputBodySchema,
     setBody,
     summary,
+    tags,
     table,
     onSuccess,
     onError,
@@ -48,7 +50,7 @@ export const createPostOperation: any =
       method: "POST",
       openApiOperation: {
         summary,
-        tags: table ? [getTableName(table)] : [],
+        tags: tags ?? (table ? [getTableName(table)] : []),
       },
     })
       .input({

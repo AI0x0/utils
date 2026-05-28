@@ -25,6 +25,7 @@ export interface GetListOperationOptions<
   ): Promise<Record<string, unknown>>;
   byCreator?: boolean;
   summary?: string;
+  tags?: string[];
   table?: TTable;
   onSuccess?<D extends T>(data: {
     data: z.infer<D>[];
@@ -51,6 +52,7 @@ export const createGetListOperation: any =
     bodySchema,
     table,
     summary,
+    tags,
     relations,
     jsonArrayFields,
     setParams,
@@ -62,7 +64,7 @@ export const createGetListOperation: any =
       method: "GET",
       openApiOperation: {
         summary,
-        tags: table ? [getTableName(table)] : [],
+        tags: tags ?? (table ? [getTableName(table)] : []),
       },
     })
       .input({

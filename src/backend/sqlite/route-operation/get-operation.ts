@@ -26,6 +26,7 @@ export interface GetOperationOptions<
     _error: Error,
   ) => Promise<ReturnType<(typeof TypedNextResponse)["json"]> | undefined>;
   summary?: string;
+  tags?: string[];
   table?: TTable;
   byCreator?: boolean;
 }
@@ -43,6 +44,7 @@ export const createGetOperation: any =
     bodySchema,
     table,
     summary,
+    tags,
     relations,
     setParams,
     jsonArrayFields,
@@ -54,7 +56,7 @@ export const createGetOperation: any =
       method: "GET",
       openApiOperation: {
         summary,
-        tags: table ? [getTableName(table)] : [],
+        tags: tags ?? (table ? [getTableName(table)] : []),
       },
     })
       .input({
