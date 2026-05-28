@@ -10,7 +10,10 @@ export interface DeleteOperationOptions<TTable extends BaseTable> {
   table?: TTable;
   summary?: string;
   tags?: string[];
-  onSuccess?: () => Promise<void>;
+  onSuccess?: (_payload: {
+    params: { id: string; creatorId?: string };
+    data: unknown;
+  }) => Promise<void>;
   onError?: (
     _error: Error,
   ) => Promise<ReturnType<(typeof TypedNextResponse)["json"]> | undefined>;
@@ -58,7 +61,7 @@ export const createDeleteOperation: any =
           const data = table
             ? await createDeleteAction({ table, db })(body)
             : body;
-          await onSuccess?.();
+          await onSuccess?.({ data, params: body });
           return TypedNextResponse.json(data, {
             status: 200,
           });

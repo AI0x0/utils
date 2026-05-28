@@ -21,7 +21,10 @@ export interface PostOperationOptions<
   ) => Promise<Partial<z.infer<IB>>>;
   summary?: string;
   tags?: string[];
-  onSuccess?: (_data: z.infer<OB>) => Promise<z.infer<OB>>;
+  onSuccess?: (_payload: {
+    params: Record<string, unknown>;
+    data: z.infer<OB>;
+  }) => Promise<z.infer<OB>>;
   onError?: (
     _error: Error,
   ) => Promise<ReturnType<(typeof TypedNextResponse)["json"]> | undefined>;
@@ -80,16 +83,17 @@ export const createPostOperation: any =
             string,
             unknown
           >;
+          const params = { creatorId: userId, ...mergedBody };
           const raw = table
             ? (
-                await createPostAction({ bodySchema, db, table })({
-                  creatorId: userId,
-                  ...mergedBody,
-                } as any)
+                await createPostAction({ bodySchema, db, table })(params as any)
               )[0]
-            : ({ creatorId: userId, ...mergedBody } as z.infer<OB>);
+            : (params as z.infer<OB>);
           const data = onSuccess
-            ? await onSuccess(raw as unknown as z.infer<OB>)
+            ? await onSuccess({
+                data: raw as unknown as z.infer<OB>,
+                params,
+              })
             : (raw as unknown as z.infer<OB>);
           return TypedNextResponse.json(data as z.infer<OB>, {
             status: 200,

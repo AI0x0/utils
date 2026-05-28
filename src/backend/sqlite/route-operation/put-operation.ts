@@ -24,7 +24,10 @@ export interface PutOperationOptions<
   setBody?: (
     _req: TypedNextRequest<"PUT", "application/json", z.infer<IB>>,
   ) => Promise<Partial<z.infer<IB>>>;
-  onSuccess?: (_data: z.infer<OB>) => Promise<z.infer<OB>>;
+  onSuccess?: (_payload: {
+    params: Record<string, unknown>;
+    data: z.infer<OB>;
+  }) => Promise<z.infer<OB>>;
   onError?: (
     _error: Error,
   ) => Promise<ReturnType<(typeof TypedNextResponse)["json"]> | undefined>;
@@ -84,15 +87,19 @@ export const createPutOperation: any =
             string,
             unknown
           >;
+          const params = { editorId: userId, ...mergedBody };
           const raw = table
             ? await createPutAction({
                 bodySchema,
                 table,
                 db,
-              })({ editorId: userId, ...mergedBody } as any, { byCreator })
-            : ({ editorId: userId, ...mergedBody } as z.infer<OB>);
+              })(params as any, { byCreator })
+            : (params as z.infer<OB>);
           const data = onSuccess
-            ? await onSuccess(raw as unknown as z.infer<OB>)
+            ? await onSuccess({
+                data: raw as unknown as z.infer<OB>,
+                params,
+              })
             : (raw as unknown as z.infer<OB>);
           return TypedNextResponse.json(data as z.infer<OB>, {
             status: 200,

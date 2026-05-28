@@ -27,9 +27,12 @@ export interface GetListOperationOptions<
   summary?: string;
   tags?: string[];
   table?: TTable;
-  onSuccess?<D extends T>(data: {
-    data: z.infer<D>[];
-    total: number;
+  onSuccess?<D extends T>(payload: {
+    params: Partial<z.infer<T>> & Record<string, unknown>;
+    data: {
+      data: z.infer<D>[];
+      total: number;
+    };
   }): Promise<{
     data: z.infer<T>[];
     total: number;
@@ -110,7 +113,7 @@ export const createGetListOperation: any =
             : { data: [], total: 0 };
 
           if (onSuccess) {
-            result = await onSuccess(result);
+            result = await onSuccess({ data: result, params: mergedParams });
           }
 
           return TypedNextResponse.json(

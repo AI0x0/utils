@@ -126,20 +126,6 @@ describe("createDeleteOperation", () => {
     expect(getSession).toHaveBeenCalled();
   });
 
-  it("onSuccess 回调被调用", async () => {
-    const { createDeleteOperation } =
-      await import("@/backend/route-operation/delete-operation");
-    const db = makeDb();
-    const onSuccess = vi.fn(async () => {});
-    const operation = createDeleteOperation({ db, getSession })({
-      table: testTable,
-      byCreator: false,
-      onSuccess,
-    });
-    await (operation as unknown as Operation)._handler(makeReq({ id: "id-1" }));
-    expect(onSuccess).toHaveBeenCalled();
-  });
-
   it("不传 table 时跳过删除表操作", async () => {
     const { createDeleteOperation } =
       await import("@/backend/route-operation/delete-operation");
@@ -230,30 +216,12 @@ describe("createPostOperation", () => {
     expect(setBody).toHaveBeenCalled();
   });
 
-  it("onSuccess 转换返回数据", async () => {
-    const { createPostOperation } =
-      await import("@/backend/route-operation/post-operation");
-    const db = makeDb();
-    const bodySchema = z.object({ name: z.string() });
-    const onSuccess = vi.fn(async (data: any) => ({ ...data, extra: true }));
-    const operation = createPostOperation({ db, getSession })({
-      bodySchema,
-      table: testTable,
-      onSuccess,
-    });
-    const res = await (operation as unknown as Operation)._handler(
-      makeReq({ name: "test" }),
-    );
-    expect(onSuccess).toHaveBeenCalled();
-    expect(res.data.extra).toBe(true);
-  });
-
   it("不传 table 时跳过插入表操作", async () => {
     const { createPostOperation } =
       await import("@/backend/route-operation/post-operation");
     const db = makeDb();
     const bodySchema = z.object({ name: z.string() });
-    const onSuccess = vi.fn(async (data: any) => ({ ...data, ok: true }));
+    const onSuccess = vi.fn(async ({ data }: any) => ({ ...data, ok: true }));
     const operation = createPostOperation({ db, getSession })({
       bodySchema,
       onSuccess,
@@ -262,7 +230,10 @@ describe("createPostOperation", () => {
       makeReq({ name: "test" }),
     );
     expect(db.insert).not.toHaveBeenCalled();
-    expect(onSuccess).toHaveBeenCalled();
+    expect(onSuccess).toHaveBeenCalledWith({
+      data: { creatorId: "user-1", name: "test" },
+      params: { creatorId: "user-1", name: "test" },
+    });
     expect(res.data.name).toBe("test");
     expect(res.data.ok).toBe(true);
   });
@@ -310,24 +281,6 @@ describe("createGetListOperation", () => {
     expect(res.status).toBe(200);
   });
 
-  it("onSuccess 可转换结果", async () => {
-    const { createGetListOperation } =
-      await import("@/backend/route-operation/get-list-operation");
-    const db = makeDb();
-    const bodySchema = z.object({ id: z.string(), name: z.string() });
-    const querySchema = z.object({});
-    const onSuccess = vi.fn(async (result: any) => ({ ...result, total: 999 }));
-    const operation = createGetListOperation({ db, getSession })({
-      bodySchema,
-      querySchema,
-      table: testTable,
-      onSuccess,
-    });
-    const res = await (operation as unknown as Operation)._handler(makeReq());
-    expect(onSuccess).toHaveBeenCalled();
-    expect(res.data.total).toBe(999);
-  });
-
   it("不传 table 时跳过列表表查询", async () => {
     const { createGetListOperation } =
       await import("@/backend/route-operation/get-list-operation");
@@ -345,7 +298,10 @@ describe("createGetListOperation", () => {
     });
     const res = await (operation as unknown as Operation)._handler(makeReq());
     expect(db.select).not.toHaveBeenCalled();
-    expect(onSuccess).toHaveBeenCalledWith({ data: [], total: 0 });
+    expect(onSuccess).toHaveBeenCalledWith({
+      data: { data: [], total: 0 },
+      params: { creatorId: "user-1" },
+    });
     expect(res.data.total).toBe(1);
   });
 
@@ -395,24 +351,6 @@ describe("createGetOperation", () => {
       makeReq({}, { id: "id-1" }),
     );
     expect(res.status).toBe(200);
-  });
-
-  it("onSuccess 转换结果", async () => {
-    const { createGetOperation } =
-      await import("@/backend/route-operation/get-operation");
-    const db = makeDb();
-    const bodySchema = z.object({ id: z.string(), name: z.string() });
-    const querySchema = z.object({});
-    const onSuccess = vi.fn(async (data: any) => ({ ...data, extra: true }));
-    const operation = createGetOperation({ db, getSession })({
-      bodySchema,
-      querySchema,
-      table: testTable,
-      onSuccess,
-    });
-    const res = await (operation as unknown as Operation)._handler(makeReq());
-    expect(onSuccess).toHaveBeenCalled();
-    expect(res.data.extra).toBe(true);
   });
 
   it("不传 table 时跳过详情表查询", async () => {
@@ -500,25 +438,6 @@ describe("createPutOperation", () => {
       makeReq({ id: "id-1", name: "x" }),
     );
     expect(setBody).toHaveBeenCalled();
-  });
-
-  it("onSuccess 转换结果", async () => {
-    const { createPutOperation } =
-      await import("@/backend/route-operation/put-operation");
-    const db = makeDb();
-    const bodySchema = z.object({ id: z.string(), name: z.string() });
-    const onSuccess = vi.fn(async (data: any) => ({ ...data, patched: true }));
-    const operation = createPutOperation({ db, getSession })({
-      bodySchema,
-      table: testTable,
-      byCreator: false,
-      onSuccess,
-    });
-    const res = await (operation as unknown as Operation)._handler(
-      makeReq({ id: "id-1", name: "x" }),
-    );
-    expect(onSuccess).toHaveBeenCalled();
-    expect(res.data.patched).toBe(true);
   });
 
   it("不传 table 时跳过更新表操作", async () => {

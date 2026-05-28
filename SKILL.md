@@ -325,7 +325,7 @@ export const { GET } = route({
 
 - Extra server-side filters — `setParams(req) => Promise<Record<string, unknown>>` on GET/GET_LIST; returned keys are merged into the filter.
 - Extra columns on write — `setBody(req) => Promise<Partial<infer<IB>>>` on POST/PUT; returned fields are merged into the body before validation runs against `bodySchema`.
-- Post-processing output — `onSuccess(data) => Promise<data>`; on GET_LIST the payload is `{ data, total }`.
+- Post-processing output — `onSuccess({ params, data }) => Promise<data>`; on GET_LIST `data` is `{ data, total }`.
 - Error rewriting — `onError(err) => Promise<Response | undefined>`. Return `undefined` to rethrow.
 
 ## Imports

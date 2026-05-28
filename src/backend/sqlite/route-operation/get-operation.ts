@@ -21,7 +21,10 @@ export interface GetOperationOptions<
   setParams?: (
     _req: TypedNextRequest<"GET", "application/json", unknown, z.infer<Q>>,
   ) => Promise<Record<string, unknown>>;
-  onSuccess?: (_data: z.infer<T>) => Promise<z.infer<T>>;
+  onSuccess?: (_payload: {
+    params: Partial<z.infer<T>> & Record<string, unknown>;
+    data: z.infer<T>;
+  }) => Promise<z.infer<T>>;
   onError?: (
     _error: Error,
   ) => Promise<ReturnType<(typeof TypedNextResponse)["json"]> | undefined>;
@@ -102,7 +105,7 @@ export const createGetOperation: any =
             : mergedParams;
           let result = (rawResult ?? ({} as z.infer<T>)) as z.infer<T>;
           if (onSuccess) {
-            result = await onSuccess(result);
+            result = await onSuccess({ data: result, params: mergedParams });
           }
           return TypedNextResponse.json(result as z.infer<T>, {
             status: 200,
