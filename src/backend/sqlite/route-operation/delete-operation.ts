@@ -24,7 +24,7 @@ export const createDeleteOperation: any =
     db,
     getSession,
   }: {
-    db: any;
+    db?: any;
     getSession: (_req: NextRequest) => Promise<{ userId?: string } | undefined>;
   }) =>
   <TTable extends BaseTable>({
@@ -58,9 +58,8 @@ export const createDeleteOperation: any =
             const { userId } = (await getSession(req)) || {};
             body.creatorId = userId;
           }
-          const data = table
-            ? await createDeleteAction({ table, db })(body)
-            : body;
+          const data =
+            table && db ? await createDeleteAction({ table, db })(body) : body;
           await onSuccess?.({ data, params: body });
           return TypedNextResponse.json(data, {
             status: 200,

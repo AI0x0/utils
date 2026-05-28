@@ -41,7 +41,7 @@ export const createPutOperation: any =
     db,
   }: {
     getSession(req: NextRequest): Promise<{ userId?: string } | undefined>;
-    db: NodePgDatabase<Record<string, unknown>>;
+    db?: NodePgDatabase<Record<string, unknown>>;
   }) =>
   <IB extends ZodSchema, OB extends ZodSchema, TTable extends BaseTable>({
     bodySchema,
@@ -89,13 +89,14 @@ export const createPutOperation: any =
             unknown
           >;
           const params = { editorId: userId, ...mergedBody };
-          const raw = table
-            ? await createPutAction({
-                bodySchema,
-                table,
-                db,
-              })(params as any, { byCreator })
-            : (params as z.infer<OB>);
+          const raw =
+            table && db
+              ? await createPutAction({
+                  bodySchema,
+                  table,
+                  db,
+                })(params as any, { byCreator })
+              : (params as z.infer<OB>);
           const data = onSuccess
             ? await onSuccess({
                 data: raw as unknown as z.infer<OB>,

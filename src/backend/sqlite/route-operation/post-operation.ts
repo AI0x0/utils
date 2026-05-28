@@ -36,7 +36,7 @@ export const createPostOperation: any =
     getSession,
     db,
   }: {
-    db: any;
+    db?: any;
     getSession: (_req: NextRequest) => Promise<{ userId?: string } | undefined>;
   }) =>
   <IB extends ZodSchema, OB extends ZodSchema, TTable extends SQLiteTable>({
@@ -84,11 +84,14 @@ export const createPostOperation: any =
             unknown
           >;
           const params = { creatorId: userId, ...mergedBody };
-          const raw = table
-            ? (
-                await createPostAction({ bodySchema, db, table })(params as any)
-              )[0]
-            : (params as z.infer<OB>);
+          const raw =
+            table && db
+              ? (
+                  await createPostAction({ bodySchema, db, table })(
+                    params as any,
+                  )
+                )[0]
+              : (params as z.infer<OB>);
           const data = onSuccess
             ? await onSuccess({
                 data: raw as unknown as z.infer<OB>,

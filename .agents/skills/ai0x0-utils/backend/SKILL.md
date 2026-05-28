@@ -81,6 +81,8 @@ export const getOperation = createGetOperation({ db, getSession });
 export const getListOperation = createGetListOperation({ db, getSession });
 ```
 
+`db` may be omitted for operation-only endpoints that should not touch the database even when `table` is supplied for OpenAPI tags.
+
 `getSession(req)` **must** return `{ userId?: string } | undefined` (a Promise is fine). Throwing rejects the request; returning `undefined` disables ownership checks for that call.
 
 ## Factory Catalog
@@ -96,7 +98,7 @@ export const getListOperation = createGetListOperation({ db, getSession });
 
 `tags` can be passed manually to override the default OpenAPI tag inferred from `table`.
 
-`table` is optional for route operations. When omitted, the operation still parses input, applies `setParams` / `setBody`, session-derived fields, and `onSuccess`, but skips the built-in table action (`select` / `insert` / `update` / `delete`). Use this for custom endpoints that want the same OpenAPI and response wiring without a direct table operation.
+`table` and factory-level `db` are optional for route operations. When `table` is omitted or `db` is not provided, the operation still parses input, applies `setParams` / `setBody`, session-derived fields, and `onSuccess`, but skips the built-in table action (`select` / `insert` / `update` / `delete`). Use this for custom endpoints that want the same OpenAPI and response wiring without a direct table operation.
 
 ## Canonical Examples
 

@@ -40,7 +40,7 @@ export const createGetOperation: any =
     getSession,
     db,
   }: {
-    db: NodePgDatabase<Record<string, unknown>>;
+    db?: NodePgDatabase<Record<string, unknown>>;
     getSession(req: NextRequest): Promise<{ userId?: string } | undefined>;
   }) =>
   <T extends ZodSchema, Q extends ZodSchema, TTable extends BaseTable>({
@@ -95,15 +95,16 @@ export const createGetOperation: any =
             Object.fromEntries(new URL(req.url).searchParams),
             params,
           ) as Partial<z.infer<T>> & Record<string, unknown>;
-          const rawResult = table
-            ? await createGetAction({
-                bodySchema,
-                db,
-                jsonArrayFields,
-                relations,
-                table,
-              })(mergedParams)
-            : mergedParams;
+          const rawResult =
+            table && db
+              ? await createGetAction({
+                  bodySchema,
+                  db,
+                  jsonArrayFields,
+                  relations,
+                  table,
+                })(mergedParams)
+              : mergedParams;
           let result = (rawResult ?? ({} as z.infer<T>)) as z.infer<T>;
           if (onSuccess) {
             result = await onSuccess({ data: result, params: mergedParams });
