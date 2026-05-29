@@ -43,19 +43,17 @@ describe("route operation output schema types", () => {
     const getSession = vi.fn(async () => undefined);
 
     const operation = createPostOperation({ getSession })({
-      bodySchema,
-      outputBodySchema,
+      schemas: { body: bodySchema, response: outputBodySchema },
     });
     const sqliteOperation = createSqlitePostOperation({ getSession })({
-      bodySchema,
-      outputBodySchema,
+      schemas: { body: bodySchema, response: outputBodySchema },
     });
 
     expect(operation).toBeDefined();
     expect(sqliteOperation).toBeDefined();
   }, 10000);
 
-  it("postOperation 的 onSuccess params 根据 bodySchema 推导", async () => {
+  it("postOperation 的 handler params 根据 bodySchema 推导", async () => {
     const { createPostOperation } =
       await import("@/backend/route-operation/post-operation");
     const { createPostOperation: createSqlitePostOperation } =
@@ -74,21 +72,19 @@ describe("route operation output schema types", () => {
       Promise.resolve({ id: input.title });
 
     const operation = createPostOperation({ getSession })({
-      bodySchema,
-      onSuccess: async ({ params }) => createPayload(params),
-      outputBodySchema,
+      schemas: { body: bodySchema, response: outputBodySchema },
+      handler: async ({ params }) => createPayload(params),
     });
     const sqliteOperation = createSqlitePostOperation({ getSession })({
-      bodySchema,
-      onSuccess: async ({ params }) => createPayload(params),
-      outputBodySchema,
+      schemas: { body: bodySchema, response: outputBodySchema },
+      handler: async ({ params }) => createPayload(params),
     });
 
     expect(operation).toBeDefined();
     expect(sqliteOperation).toBeDefined();
   }, 10000);
 
-  it("getOperation 的 onSuccess params 根据 querySchema 推导", async () => {
+  it("getOperation 的 handler params 根据 querySchema 推导", async () => {
     const { createGetOperation } =
       await import("@/backend/route-operation/get-operation");
     const { createGetOperation: createSqliteGetOperation } =
@@ -106,21 +102,19 @@ describe("route operation output schema types", () => {
       Promise.resolve({ status: input.requestId });
 
     const operation = createGetOperation({ getSession })({
-      bodySchema,
-      onSuccess: async ({ params }) => getStatus(params),
-      querySchema,
+      schemas: { query: querySchema, response: bodySchema },
+      handler: async ({ params }) => getStatus(params),
     });
     const sqliteOperation = createSqliteGetOperation({ getSession })({
-      bodySchema,
-      onSuccess: async ({ params }) => getStatus(params),
-      querySchema,
+      schemas: { query: querySchema, response: bodySchema },
+      handler: async ({ params }) => getStatus(params),
     });
 
     expect(operation).toBeDefined();
     expect(sqliteOperation).toBeDefined();
   }, 10000);
 
-  it("getListOperation 的 onSuccess params 根据 querySchema 推导", async () => {
+  it("getListOperation 的 handler params 根据 querySchema 推导", async () => {
     const { createGetListOperation } =
       await import("@/backend/route-operation/get-list-operation");
     const { createGetListOperation: createSqliteGetListOperation } =
@@ -142,21 +136,19 @@ describe("route operation output schema types", () => {
       });
 
     const operation = createGetListOperation({ getSession })({
-      bodySchema,
-      onSuccess: async ({ params }) => getList(params),
-      querySchema,
+      schemas: { query: querySchema, response: bodySchema },
+      handler: async ({ params }) => getList(params),
     });
     const sqliteOperation = createSqliteGetListOperation({ getSession })({
-      bodySchema,
-      onSuccess: async ({ params }) => getList(params),
-      querySchema,
+      schemas: { query: querySchema, response: bodySchema },
+      handler: async ({ params }) => getList(params),
     });
 
     expect(operation).toBeDefined();
     expect(sqliteOperation).toBeDefined();
   }, 10000);
 
-  it("deleteOperation 的 onSuccess params 根据 bodySchema 推导", async () => {
+  it("deleteOperation 的 handler params 根据 bodySchema 推导", async () => {
     const { createDeleteOperation } =
       await import("@/backend/route-operation/delete-operation");
     const { createDeleteOperation: createSqliteDeleteOperation } =
@@ -172,12 +164,12 @@ describe("route operation output schema types", () => {
     };
 
     const operation = createDeleteOperation({ getSession })({
-      bodySchema,
-      onSuccess: async ({ params }) => deleteDoc(params),
+      schemas: { body: bodySchema },
+      handler: async ({ params }) => deleteDoc(params),
     });
     const sqliteOperation = createSqliteDeleteOperation({ getSession })({
-      bodySchema,
-      onSuccess: async ({ params }) => deleteDoc(params),
+      schemas: { body: bodySchema },
+      handler: async ({ params }) => deleteDoc(params),
     });
 
     expect(operation).toBeDefined();

@@ -72,45 +72,46 @@ function makeReq(body: any = {}, query: Record<string, string> = {}) {
 }
 
 // ==============================================================================
-// onSuccess payload
+// handler payload
 // ==============================================================================
-describe("route operation onSuccess payload", () => {
+describe("route operation handler payload", () => {
   const getSession = vi.fn(async () => ({ userId: "user-1" }));
 
   it("deleteOperation 传入 { params, data }", async () => {
     const { createDeleteOperation } =
       await import("@/backend/route-operation/delete-operation");
-    const onSuccess = vi.fn(async () => {});
+    const handler = vi.fn(async () => {});
     const operation = createDeleteOperation({ db: makeDb(), getSession })({
-      byCreator: false,
-      onSuccess,
+      access: { byCreator: false },
+      handler,
       table: testTable,
     }) as unknown as Operation;
 
     await operation._handler(makeReq({ id: "id-1" }));
 
-    expect(onSuccess).toHaveBeenCalledWith({
+    expect(handler).toHaveBeenCalledWith({
       data: [{ id: "id-1", name: "foo" }],
       params: { id: "id-1" },
+      req: expect.any(Object),
     });
   });
 
   it("postOperation 可用 { params, data } 转换结果", async () => {
     const { createPostOperation } =
       await import("@/backend/route-operation/post-operation");
-    const onSuccess = vi.fn(async ({ data }: any) => ({
+    const handler = vi.fn(async ({ data }: any) => ({
       ...data,
       extra: true,
     }));
     const operation = createPostOperation({ db: makeDb(), getSession })({
-      bodySchema: z.object({ name: z.string() }),
-      onSuccess,
+      schemas: { body: z.object({ name: z.string() }) },
+      handler,
       table: testTable,
     }) as unknown as Operation;
 
     const res = await operation._handler(makeReq({ name: "test" }));
 
-    expect(onSuccess).toHaveBeenCalledWith(
+    expect(handler).toHaveBeenCalledWith(
       expect.objectContaining({
         data: { id: "id-1", name: "foo" },
         params: { creatorId: "user-1", name: "test" },
@@ -123,22 +124,25 @@ describe("route operation onSuccess payload", () => {
   it("getListOperation 可用 { params, data } 转换结果", async () => {
     const { createGetListOperation } =
       await import("@/backend/route-operation/get-list-operation");
-    const onSuccess = vi.fn(async ({ data }: any) => ({
+    const handler = vi.fn(async ({ data }: any) => ({
       ...data,
       total: 999,
     }));
     const operation = createGetListOperation({ db: makeDb(), getSession })({
-      bodySchema: z.object({ id: z.string(), name: z.string() }),
-      onSuccess,
-      querySchema: z.object({}),
+      handler,
+      schemas: {
+        query: z.object({}),
+        response: z.object({ id: z.string(), name: z.string() }),
+      },
       table: testTable,
     }) as unknown as Operation;
 
     const res = await operation._handler(makeReq());
 
-    expect(onSuccess).toHaveBeenCalledWith({
+    expect(handler).toHaveBeenCalledWith({
       data: { data: [{ id: "id-1", name: "foo" }], total: 1 },
       params: { creatorId: "user-1" },
+      req: expect.any(Object),
     });
     expect(res.data.total).toBe(999);
   });
@@ -146,22 +150,25 @@ describe("route operation onSuccess payload", () => {
   it("getOperation 可用 { params, data } 转换结果", async () => {
     const { createGetOperation } =
       await import("@/backend/route-operation/get-operation");
-    const onSuccess = vi.fn(async ({ data }: any) => ({
+    const handler = vi.fn(async ({ data }: any) => ({
       ...data,
       extra: true,
     }));
     const operation = createGetOperation({ db: makeDb(), getSession })({
-      bodySchema: z.object({ id: z.string(), name: z.string() }),
-      onSuccess,
-      querySchema: z.object({}),
+      handler,
+      schemas: {
+        query: z.object({}),
+        response: z.object({ id: z.string(), name: z.string() }),
+      },
       table: testTable,
     }) as unknown as Operation;
 
     const res = await operation._handler(makeReq());
 
-    expect(onSuccess).toHaveBeenCalledWith({
+    expect(handler).toHaveBeenCalledWith({
       data: { id: "id-1", name: "foo" },
       params: { creatorId: "user-1" },
+      req: expect.any(Object),
     });
     expect(res.data.extra).toBe(true);
   });
@@ -169,22 +176,23 @@ describe("route operation onSuccess payload", () => {
   it("putOperation 可用 { params, data } 转换结果", async () => {
     const { createPutOperation } =
       await import("@/backend/route-operation/put-operation");
-    const onSuccess = vi.fn(async ({ data }: any) => ({
+    const handler = vi.fn(async ({ data }: any) => ({
       ...data,
       patched: true,
     }));
     const operation = createPutOperation({ db: makeDb(), getSession })({
-      bodySchema: z.object({ id: z.string(), name: z.string() }),
-      byCreator: false,
-      onSuccess,
+      access: { byCreator: false },
+      handler,
+      schemas: { body: z.object({ id: z.string(), name: z.string() }) },
       table: testTable,
     }) as unknown as Operation;
 
     const res = await operation._handler(makeReq({ id: "id-1", name: "x" }));
 
-    expect(onSuccess).toHaveBeenCalledWith({
+    expect(handler).toHaveBeenCalledWith({
       data: { id: "id-1", name: "foo" },
       params: { editorId: "user-1", id: "id-1", name: "x" },
+      req: expect.any(Object),
     });
     expect(res.data.patched).toBe(true);
   });

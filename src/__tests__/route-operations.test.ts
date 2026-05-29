@@ -103,7 +103,7 @@ describe("createDeleteOperation", () => {
     const db = makeDb();
     const operation = createDeleteOperation({ db, getSession })({
       table: testTable,
-      byCreator: false,
+      access: { byCreator: false },
     });
     const res = await (operation as unknown as Operation)._handler(
       makeReq({ id: "id-1" }),
@@ -118,7 +118,7 @@ describe("createDeleteOperation", () => {
     const db = makeDb();
     const operation = createDeleteOperation({ db, getSession })({
       table: testTable,
-      byCreator: true,
+      access: { byCreator: true },
     });
     // byCreator=true 时内部传 creatorId，createDeleteAction 会先 get 验权
     // 这里 db.select 返回的 rows=[{id:'id-1'}] 可以找到记录，delete 正常执行
@@ -131,7 +131,7 @@ describe("createDeleteOperation", () => {
       await import("@/backend/route-operation/delete-operation");
     const db = makeDb();
     const operation = createDeleteOperation({ db, getSession })({
-      byCreator: false,
+      access: { byCreator: false },
     });
     const res = await (operation as unknown as Operation)._handler(
       makeReq({ id: "id-1" }),
@@ -140,7 +140,7 @@ describe("createDeleteOperation", () => {
     expect(res.data.id).toBe("id-1");
   });
 
-  it("onError 拦截异常并返回自定义响应", async () => {
+  it("catch 拦截异常并返回自定义响应", async () => {
     const { createDeleteOperation } =
       await import("@/backend/route-operation/delete-operation");
     const db = makeDb();
@@ -148,20 +148,23 @@ describe("createDeleteOperation", () => {
       throw new Error("db error");
     });
 
-    const onError = vi.fn(async () => ({ data: null, status: 500 })) as any;
+    const catchHandler = vi.fn(async () => ({
+      data: null,
+      status: 500,
+    })) as any;
     const operation = createDeleteOperation({ db, getSession })({
       table: testTable,
-      byCreator: false,
-      onError,
+      access: { byCreator: false },
+      catch: catchHandler,
     });
     const res = await (operation as unknown as Operation)._handler(
       makeReq({ id: "id-1" }),
     );
-    expect(onError).toHaveBeenCalled();
+    expect(catchHandler).toHaveBeenCalled();
     expect(res.status).toBe(500);
   });
 
-  it("onError 未定义时抛出异常", async () => {
+  it("catch 未定义时抛出异常", async () => {
     const { createDeleteOperation } =
       await import("@/backend/route-operation/delete-operation");
     const db = makeDb();
@@ -170,7 +173,7 @@ describe("createDeleteOperation", () => {
     });
     const operation = createDeleteOperation({ db, getSession })({
       table: testTable,
-      byCreator: false,
+      access: { byCreator: false },
     });
     await expect(
       (operation as unknown as Operation)._handler(makeReq({ id: "id-1" })),
@@ -189,7 +192,7 @@ describe("createPostOperation", () => {
     const db = makeDb();
     const bodySchema = z.object({ name: z.string() });
     const operation = createPostOperation({ db, getSession })({
-      bodySchema,
+      schemas: { body: bodySchema },
       table: testTable,
     });
     const res = await (operation as unknown as Operation)._handler(
@@ -206,7 +209,7 @@ describe("createPostOperation", () => {
     const bodySchema = z.object({ name: z.string() });
     const setBody = vi.fn(async () => ({ extra: "value" })) as never;
     const operation = createPostOperation({ db, getSession })({
-      bodySchema,
+      schemas: { body: bodySchema },
       table: testTable,
       setBody,
     });
@@ -221,16 +224,16 @@ describe("createPostOperation", () => {
       await import("@/backend/route-operation/post-operation");
     const db = makeDb();
     const bodySchema = z.object({ name: z.string() });
-    const onSuccess = vi.fn(async ({ data }: any) => ({ ...data, ok: true }));
+    const handler = vi.fn(async ({ data }: any) => ({ ...data, ok: true }));
     const operation = createPostOperation({ db, getSession })({
-      bodySchema,
-      onSuccess,
+      schemas: { body: bodySchema },
+      handler,
     });
     const res = await (operation as unknown as Operation)._handler(
       makeReq({ name: "test" }),
     );
     expect(db.insert).not.toHaveBeenCalled();
-    expect(onSuccess).toHaveBeenCalledWith(
+    expect(handler).toHaveBeenCalledWith(
       expect.objectContaining({
         data: { creatorId: "user-1", name: "test" },
         params: { creatorId: "user-1", name: "test" },
@@ -241,7 +244,7 @@ describe("createPostOperation", () => {
     expect(res.data.ok).toBe(true);
   });
 
-  it("onError 拦截异常", async () => {
+  it("catch 拦截异常", async () => {
     const { createPostOperation } =
       await import("@/backend/route-operation/post-operation");
     const db = makeDb();
@@ -249,17 +252,20 @@ describe("createPostOperation", () => {
       throw new Error("fail");
     });
 
-    const onError = vi.fn(async () => ({ data: null, status: 500 })) as any;
+    const catchHandler = vi.fn(async () => ({
+      data: null,
+      status: 500,
+    })) as any;
     const bodySchema = z.object({ name: z.string() });
     const operation = createPostOperation({ db, getSession })({
-      bodySchema,
+      schemas: { body: bodySchema },
       table: testTable,
-      onError,
+      catch: catchHandler,
     });
     const res = await (operation as unknown as Operation)._handler(
       makeReq({ name: "x" }),
     );
-    expect(onError).toHaveBeenCalled();
+    expect(catchHandler).toHaveBeenCalled();
     expect(res.status).toBe(500);
   });
 });
@@ -276,8 +282,7 @@ describe("createGetListOperation", () => {
     const bodySchema = z.object({ id: z.string(), name: z.string() });
     const querySchema = z.object({ current: z.string().optional() });
     const operation = createGetListOperation({ db, getSession })({
-      bodySchema,
-      querySchema,
+      schemas: { query: querySchema, response: bodySchema },
       table: testTable,
     });
     const res = await (operation as unknown as Operation)._handler(makeReq());
@@ -290,25 +295,25 @@ describe("createGetListOperation", () => {
     const db = makeDb();
     const bodySchema = z.object({ id: z.string(), name: z.string() });
     const querySchema = z.object({});
-    const onSuccess = vi.fn(async () => ({
+    const handler = vi.fn(async () => ({
       data: [{ id: "virtual", name: "manual" }],
       total: 1,
     }));
     const operation = createGetListOperation({ db, getSession })({
-      bodySchema,
-      querySchema,
-      onSuccess,
+      schemas: { query: querySchema, response: bodySchema },
+      handler,
     });
     const res = await (operation as unknown as Operation)._handler(makeReq());
     expect(db.select).not.toHaveBeenCalled();
-    expect(onSuccess).toHaveBeenCalledWith({
+    expect(handler).toHaveBeenCalledWith({
       data: { data: [], total: 0 },
       params: { creatorId: "user-1" },
+      req: expect.any(Object),
     });
     expect(res.data.total).toBe(1);
   });
 
-  it("onError 拦截异常", async () => {
+  it("catch 拦截异常", async () => {
     const { createGetListOperation } =
       await import("@/backend/route-operation/get-list-operation");
     const db = makeDb();
@@ -316,17 +321,19 @@ describe("createGetListOperation", () => {
       throw new Error("fail");
     });
 
-    const onError = vi.fn(async () => ({ data: null, status: 500 })) as any;
+    const catchHandler = vi.fn(async () => ({
+      data: null,
+      status: 500,
+    })) as any;
     const bodySchema = z.object({ id: z.string() });
     const querySchema = z.object({});
     const operation = createGetListOperation({ db, getSession })({
-      bodySchema,
-      querySchema,
+      schemas: { query: querySchema, response: bodySchema },
       table: testTable,
-      onError,
+      catch: catchHandler,
     });
     const res = await (operation as unknown as Operation)._handler(makeReq());
-    expect(onError).toHaveBeenCalled();
+    expect(catchHandler).toHaveBeenCalled();
     expect(res.status).toBe(500);
   });
 });
@@ -346,8 +353,7 @@ describe("createGetOperation", () => {
     const bodySchema = z.object({ id: z.string(), name: z.string() });
     const querySchema = z.object({ id: z.string().optional() });
     const operation = createGetOperation({ db, getSession })({
-      bodySchema,
-      querySchema,
+      schemas: { query: querySchema, response: bodySchema },
       table: testTable,
     });
     const res = await (operation as unknown as Operation)._handler(
@@ -366,9 +372,8 @@ describe("createGetOperation", () => {
     });
     const querySchema = z.object({ id: z.string().optional() });
     const operation = createGetOperation({ db, getSession })({
-      bodySchema,
-      querySchema,
-      byCreator: false,
+      schemas: { query: querySchema, response: bodySchema },
+      access: { byCreator: false },
     });
     const res = await (operation as unknown as Operation)._handler(
       makeReq({}, { id: "id-1" }),
@@ -377,7 +382,7 @@ describe("createGetOperation", () => {
     expect(res.data.id).toBe("id-1");
   });
 
-  it("onError 拦截异常", async () => {
+  it("catch 拦截异常", async () => {
     const { createGetOperation } =
       await import("@/backend/route-operation/get-operation");
     const db = makeDb();
@@ -385,17 +390,19 @@ describe("createGetOperation", () => {
       throw new Error("fail");
     });
 
-    const onError = vi.fn(async () => ({ data: null, status: 500 })) as any;
+    const catchHandler = vi.fn(async () => ({
+      data: null,
+      status: 500,
+    })) as any;
     const bodySchema = z.object({ id: z.string() });
     const querySchema = z.object({});
     const operation = createGetOperation({ db, getSession })({
-      bodySchema,
-      querySchema,
+      schemas: { query: querySchema, response: bodySchema },
       table: testTable,
-      onError,
+      catch: catchHandler,
     });
     const res = await (operation as unknown as Operation)._handler(makeReq());
-    expect(onError).toHaveBeenCalled();
+    expect(catchHandler).toHaveBeenCalled();
     expect(res.status).toBe(500);
   });
 });
@@ -414,9 +421,9 @@ describe("createPutOperation", () => {
     const db = makeDb();
     const bodySchema = z.object({ id: z.string(), name: z.string() });
     const operation = createPutOperation({ db, getSession })({
-      bodySchema,
+      schemas: { body: bodySchema },
       table: testTable,
-      byCreator: false,
+      access: { byCreator: false },
     });
     const res = await (operation as unknown as Operation)._handler(
       makeReq({ id: "id-1", name: "updated" }),
@@ -432,9 +439,9 @@ describe("createPutOperation", () => {
     const bodySchema = z.object({ id: z.string(), name: z.string() });
     const setBody = vi.fn(async () => ({ extra: "v" })) as never;
     const operation = createPutOperation({ db, getSession })({
-      bodySchema,
+      schemas: { body: bodySchema },
       table: testTable,
-      byCreator: false,
+      access: { byCreator: false },
       setBody,
     });
     await (operation as unknown as Operation)._handler(
@@ -449,8 +456,8 @@ describe("createPutOperation", () => {
     const db = makeDb();
     const bodySchema = z.object({ id: z.string(), name: z.string() });
     const operation = createPutOperation({ db, getSession })({
-      bodySchema,
-      byCreator: false,
+      schemas: { body: bodySchema },
+      access: { byCreator: false },
     });
     const res = await (operation as unknown as Operation)._handler(
       makeReq({ id: "id-1", name: "updated" }),
@@ -459,7 +466,7 @@ describe("createPutOperation", () => {
     expect(res.data.name).toBe("updated");
   });
 
-  it("onError 拦截异常", async () => {
+  it("catch 拦截异常", async () => {
     const { createPutOperation } =
       await import("@/backend/route-operation/put-operation");
     const db = makeDb();
@@ -467,18 +474,21 @@ describe("createPutOperation", () => {
       throw new Error("fail");
     });
 
-    const onError = vi.fn(async () => ({ data: null, status: 500 })) as any;
+    const catchHandler = vi.fn(async () => ({
+      data: null,
+      status: 500,
+    })) as any;
     const bodySchema = z.object({ id: z.string(), name: z.string() });
     const operation = createPutOperation({ db, getSession })({
-      bodySchema,
+      schemas: { body: bodySchema },
       table: testTable,
-      byCreator: false,
-      onError,
+      access: { byCreator: false },
+      catch: catchHandler,
     });
     const res = await (operation as unknown as Operation)._handler(
       makeReq({ id: "id-1", name: "x" }),
     );
-    expect(onError).toHaveBeenCalled();
+    expect(catchHandler).toHaveBeenCalled();
     expect(res.status).toBe(500);
   });
 });

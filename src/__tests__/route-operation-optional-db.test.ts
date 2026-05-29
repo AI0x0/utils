@@ -41,7 +41,7 @@ describe("route operation optional db", () => {
     const { createDeleteOperation } =
       await import("@/backend/route-operation/delete-operation");
     const operation = createDeleteOperation({ getSession })({
-      byCreator: false,
+      access: { byCreator: false },
       table: testTable,
     }) as unknown as Operation;
 
@@ -54,7 +54,7 @@ describe("route operation optional db", () => {
     const { createPostOperation } =
       await import("@/backend/route-operation/post-operation");
     const operation = createPostOperation({ getSession })({
-      bodySchema: z.object({ name: z.string() }),
+      schemas: { body: z.object({ name: z.string() }) },
       table: testTable,
     }) as unknown as Operation;
 
@@ -67,8 +67,10 @@ describe("route operation optional db", () => {
     const { createGetListOperation } =
       await import("@/backend/route-operation/get-list-operation");
     const operation = createGetListOperation({ getSession })({
-      bodySchema: z.object({ id: z.string(), name: z.string() }),
-      querySchema: z.object({}),
+      schemas: {
+        query: z.object({}),
+        response: z.object({ id: z.string(), name: z.string() }),
+      },
       table: testTable,
     }) as unknown as Operation;
 
@@ -81,9 +83,11 @@ describe("route operation optional db", () => {
     const { createGetOperation } =
       await import("@/backend/route-operation/get-operation");
     const operation = createGetOperation({ getSession })({
-      bodySchema: z.object({ id: z.string() }),
-      byCreator: false,
-      querySchema: z.object({ id: z.string().optional() }),
+      access: { byCreator: false },
+      schemas: {
+        query: z.object({ id: z.string().optional() }),
+        response: z.object({ id: z.string() }),
+      },
       table: testTable,
     }) as unknown as Operation;
 
@@ -96,8 +100,8 @@ describe("route operation optional db", () => {
     const { createPutOperation } =
       await import("@/backend/route-operation/put-operation");
     const operation = createPutOperation({ getSession })({
-      bodySchema: z.object({ id: z.string(), name: z.string() }),
-      byCreator: false,
+      access: { byCreator: false },
+      schemas: { body: z.object({ id: z.string(), name: z.string() }) },
       table: testTable,
     }) as unknown as Operation;
 

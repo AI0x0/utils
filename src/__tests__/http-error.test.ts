@@ -42,9 +42,30 @@ const testTable = pgTable("items", {
 });
 
 function makeDb() {
+  const chain: any = {};
+  chain.execute = vi.fn(async () => []);
+  chain.offset = vi.fn(() => chain);
+  chain.limit = vi.fn(() => chain);
+  chain.orderBy = vi.fn(() => chain);
+  chain.where = vi.fn(() => chain);
+  chain.groupBy = vi.fn(() => chain);
+  chain.leftJoin = vi.fn(() => chain);
+
+  const countChain: any = {};
+  countChain.execute = vi.fn(async () => [{ count: "0" }]);
+  countChain.where = vi.fn(() => countChain);
+  countChain.leftJoin = vi.fn(() => countChain);
+
   const returning = vi.fn(async () => []);
+  let selectCall = 0;
   return {
     delete: vi.fn(() => ({ where: vi.fn(() => ({ returning })) })),
+    select: vi.fn(() => {
+      selectCall++;
+      return {
+        from: vi.fn(() => (selectCall % 2 === 1 ? chain : countChain)),
+      };
+    }),
     update: vi.fn(() => ({
       set: vi.fn(() => ({ where: vi.fn(() => ({ returning })) })),
     })),
@@ -68,7 +89,7 @@ describe("HttpError 返回正确状态码", () => {
     const db = makeDb();
     const operation = createDeleteOperation({ db, getSession })({
       table: testTable,
-      byCreator: true,
+      access: { byCreator: true },
     });
     const res = await (operation as unknown as Operation)._handler(
       makeReq({ id: "id-1" }),
@@ -84,9 +105,9 @@ describe("HttpError 返回正确状态码", () => {
     const db = makeDb();
     const bodySchema = z.object({ id: z.string(), name: z.string() });
     const operation = createPutOperation({ db, getSession })({
-      bodySchema,
+      schemas: { body: bodySchema },
       table: testTable,
-      byCreator: true,
+      access: { byCreator: true },
     });
     const res = await (operation as unknown as Operation)._handler(
       makeReq({ id: "id-1", name: "x" }),
@@ -96,23 +117,23 @@ describe("HttpError 返回正确状态码", () => {
     expect(db.update).not.toHaveBeenCalled();
   });
 
-  it("DELETE onError 优先于 HttpError 默认处理", async () => {
+  it("DELETE catch 优先于 HttpError 默认处理", async () => {
     const { createDeleteOperation } =
       await import("@/backend/route-operation/delete-operation");
     const db = makeDb();
-    const onError = vi.fn(async () => ({
+    const catchHandler = vi.fn(async () => ({
       data: { custom: true },
       status: 418,
     }));
     const operation = createDeleteOperation({ db, getSession })({
       table: testTable,
-      byCreator: true,
-      onError: onError as never,
+      access: { byCreator: true },
+      catch: catchHandler as never,
     });
     const res = await (operation as unknown as Operation)._handler(
       makeReq({ id: "id-1" }),
     );
-    expect(onError).toHaveBeenCalled();
+    expect(catchHandler).toHaveBeenCalled();
     expect(res.status).toBe(418);
   });
 });

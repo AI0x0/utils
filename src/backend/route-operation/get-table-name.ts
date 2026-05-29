@@ -7,9 +7,7 @@ function getTableName(table: PgTable): string {
   );
 
   if (nameSymbol) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    return table[nameSymbol];
+    return (table as unknown as Record<symbol, string>)[nameSymbol];
   }
 
   return "";

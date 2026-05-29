@@ -41,7 +41,7 @@ describe("route operation tags", () => {
       db: mockDb,
       getSession: async () => ({ userId: "user-1" }),
     })({
-      bodySchema: z.object({ name: z.string() }),
+      schemas: { body: z.object({ name: z.string() }) },
       openApiOperation: {
         deprecated: true,
         description: "Create an item with custom docs.",

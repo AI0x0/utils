@@ -53,7 +53,7 @@ describe("postOperation contentType", () => {
     const { createPostOperation } =
       await import("@/backend/route-operation/post-operation");
     const operation = createPostOperation({ getSession })({
-      bodySchema: z.object({ name: z.string() }),
+      schemas: { body: z.object({ name: z.string() }) },
       contentType: "multipart/form-data",
     }) as unknown as Operation;
 
@@ -71,7 +71,7 @@ describe("postOperation contentType", () => {
       await import("@/backend/route-operation/post-operation");
     const parseBody = vi.fn(async () => ({ name: "custom" }));
     const operation = createPostOperation({ getSession })({
-      bodySchema: z.object({ name: z.string() }),
+      schemas: { body: z.object({ name: z.string() }) },
       contentType: "application/x.custom+json",
       parseBody,
     }) as unknown as Operation;
@@ -85,22 +85,22 @@ describe("postOperation contentType", () => {
     expect(res.data).toEqual({ creatorId: "user-1", name: "custom" });
   });
 
-  it("onSuccess 可以读取 req", async () => {
+  it("handler 可以读取 req", async () => {
     const { createPostOperation } =
       await import("@/backend/route-operation/post-operation");
-    const onSuccess = vi.fn(async ({ data, req }: any) => ({
+    const handler = vi.fn(async ({ data, req }: any) => ({
       ...data,
       url: req.url,
     }));
     const operation = createPostOperation({ getSession })({
-      bodySchema: z.object({ name: z.string() }),
-      onSuccess,
+      schemas: { body: z.object({ name: z.string() }) },
+      handler,
     }) as unknown as Operation;
 
     const req = makeJsonReq({ name: "json" });
     const res = await operation._handler(req);
 
-    expect(onSuccess).toHaveBeenCalledWith(
+    expect(handler).toHaveBeenCalledWith(
       expect.objectContaining({
         data: { creatorId: "user-1", name: "json" },
         params: { creatorId: "user-1", name: "json" },

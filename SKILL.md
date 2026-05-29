@@ -66,22 +66,22 @@ export const getListOperation = createGetListOperation({ db, getSession });
 
 ## Factory Catalog
 
-| Export              | Purpose                    | Required options            | Notable optional options                                                                                       |
-| ------------------- | -------------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `createTableSchema` | pg `Table` + 5 zod schemas | `name`, `columns`           | `refineSchema`, `extraConfig`                                                                                  |
-| `getOperation`      | GET one by filters         | `bodySchema`, `querySchema` | `table`, `setParams`, `relations`, `jsonArrayFields`, `byCreator`, `onSuccess`, `onError`, `openApiOperation`  |
-| `getListOperation`  | GET paginated list         | `bodySchema`, `querySchema` | `table`, `setParams`, `relations`, `jsonArrayFields`, `onSuccess`, `onError`, `openApiOperation`               |
-| `postOperation`     | POST create                | `bodySchema`                | `table`, `contentType`, `parseBody`, `outputBodySchema`, `setBody`, `onSuccess`, `onError`, `openApiOperation` |
-| `putOperation`      | PUT update                 | `bodySchema`                | `table`, `outputBodySchema`, `setBody`, `byCreator`, `onSuccess`, `onError`, `openApiOperation`                |
-| `deleteOperation`   | DELETE                     | —                           | `table`, `bodySchema`, `byCreator`, `onSuccess`, `onError`, `openApiOperation`                                 |
+| Export              | Purpose                    | Required options                    | Notable optional options                                                                                         |
+| ------------------- | -------------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `createTableSchema` | pg `Table` + 5 zod schemas | `name`, `columns`                   | `refineSchema`, `extraConfig`                                                                                    |
+| `getOperation`      | GET one by filters         | `schemas.query`, `schemas.response` | `table`, `setParams`, `relations`, `jsonArrayFields`, `access.byCreator`, `handler`, `catch`, `openApiOperation` |
+| `getListOperation`  | GET paginated list         | `schemas.query`, `schemas.response` | `table`, `setParams`, `relations`, `jsonArrayFields`, `handler`, `catch`, `openApiOperation`                     |
+| `postOperation`     | POST create                | `schemas.body`                      | `table`, `contentType`, `parseBody`, `schemas.response`, `setBody`, `handler`, `catch`, `openApiOperation`       |
+| `putOperation`      | PUT update                 | `schemas.body`                      | `table`, `schemas.response`, `setBody`, `access.byCreator`, `handler`, `catch`, `openApiOperation`               |
+| `deleteOperation`   | DELETE                     | —                                   | `table`, `schemas.body`, `access.byCreator`, `handler`, `catch`, `openApiOperation`                              |
 
 `openApiOperation` is spread directly into the `next-rest-framework` operation metadata. Use it for `summary`, `description`, `tags`, `deprecated`, `security`, `externalDocs`, and future OpenAPI operation fields. When omitted, `tags` defaults to the table name when `table` is supplied.
 
 `postOperation` defaults to `contentType: "application/json"`. Pass `contentType: "multipart/form-data"` to read `await req.formData()` as body, or pass both a custom `contentType` and `parseBody(req)` for custom payload parsing.
 
-In `postOperation` and `putOperation`, `onSuccess({ params })` is typed from `bodySchema` plus the injected `creatorId` / `editorId`, so custom action helpers can usually consume `params` directly without reparsing the body schema.
+In `postOperation` and `putOperation`, `handler({ params })` is typed from `schemas.body` plus the injected `creatorId` / `editorId`, so custom action helpers can usually consume `params` directly without reparsing the body schema.
 
-`table` and factory-level `db` are optional for route operations. When `table` is omitted or `db` is not provided, the operation still parses input, applies `setParams` / `setBody`, session-derived fields, and `onSuccess`, but skips the built-in table action (`select` / `insert` / `update` / `delete`). Use this for custom endpoints that want the same OpenAPI and response wiring without a direct table operation.
+`table` and factory-level `db` are optional for route operations. When `table` is omitted or `db` is not provided, the operation still parses input, applies `setParams` / `setBody`, session-derived fields, and `handler`, but skips the built-in table action (`select` / `insert` / `update` / `delete`). Use this for custom endpoints that want the same OpenAPI and response wiring without a direct table operation.
 
 ## Canonical Examples
 
@@ -145,7 +145,7 @@ export const queryListAgentSchema = queryListSchema(
 export const queryListSelectAgentSchema = selectAgentSchema;
 ```
 
-Note the two-layer shape: `queryListSchema(...)` input is the **partial of the select schema** (optionally merged with extra querystring-only fields); `bodySchema` in `getListOperation` stays as the full select schema (`queryListSelectAgentSchema`).
+Note the two-layer shape: `queryListSchema(...)` input is the **partial of the select schema** (optionally merged with extra querystring-only fields); `schemas.response` in `getListOperation` stays as the full select schema (`queryListSelectAgentSchema`).
 
 ### 2. Detail CRUD route
 
@@ -170,8 +170,10 @@ import { seedAgentData } from "@backend/utils/actions";
 
 export const { POST, GET, DELETE, PUT } = route({
   getAgent: getOperation({
-    querySchema: queryAgentSchema,
-    bodySchema: selectAgentSchema,
+    schemas: {
+      query: queryAgentSchema,
+      response: selectAgentSchema,
+    },
     table: agents,
     openApiOperation: { summary: "助手详情" },
     setParams: async (req) => {
@@ -181,13 +183,13 @@ export const { POST, GET, DELETE, PUT } = route({
     },
   }),
   postAgent: postOperation({
-    bodySchema: insertAgentSchema,
+    schemas: { body: insertAgentSchema },
     table: agents,
     openApiOperation: { summary: "添加助手" },
     setBody: async () => ({ tags: ["my"] }),
   }),
   putAgent: putOperation({
-    bodySchema: updateAgentSchema,
+    schemas: { body: updateAgentSchema },
     table: agents,
     openApiOperation: { summary: "编辑助手" },
   }),
@@ -198,7 +200,7 @@ export const { POST, GET, DELETE, PUT } = route({
 });
 ```
 
-### 3. List route with relations + `onSuccess` tree building
+### 3. List route with relations + `handler` tree building
 
 ```ts
 // app/(backend)/api/channel/list/route.ts
@@ -216,8 +218,10 @@ import { seedChannelData } from "@backend/utils/actions/channel";
 
 export const { GET } = route({
   getChannelList: getListOperation({
-    querySchema: queryListChannelSchema,
-    bodySchema: queryListSelectChannelSchema,
+    schemas: {
+      query: queryListChannelSchema,
+      response: queryListSelectChannelSchema,
+    },
     table: channels,
     openApiOperation: { summary: "获取渠道列表" },
     relations: [
@@ -238,9 +242,9 @@ export const { GET } = route({
       await seedChannelData(userId as string);
       return {};
     },
-    onSuccess: async (result) => {
+    handler: async ({ data }) => {
       // 内部字段过滤 / 映射 / 树化都写在这里
-      return result;
+      return data;
     },
   }),
 });
@@ -305,8 +309,8 @@ export const { GET } = route({
 ## Built-in Conventions
 
 - **Base fields** auto-added by `createTableSchema`: `id` (uuid, pk, default random) / `creatorId` / `editorId` / `accessedAt` / `createdAt` / `updatedAt`.
-- **Ownership check**: with `byCreator: true` (default on PUT/DELETE/GET), PUT/DELETE pre-fetch the row filtered by `creatorId = session.userId` and throw `"未找到…对象，或没有权限"` if missing. Set `byCreator: false` to skip (e.g. admin endpoints).
-- **Auto injection**: POST writes `creatorId = session.userId`; PUT writes `editorId = session.userId`; GET/GET_LIST append `creatorId = session.userId` to the filter when `byCreator` is on.
+- **Ownership check**: with `access: { byCreator: true }` (default on PUT/DELETE/GET), PUT/DELETE pre-fetch the row filtered by `creatorId = session.userId` and throw `"未找到…对象，或没有权限"` if missing. Set `access: { byCreator: false }` to skip (e.g. admin endpoints).
+- **Auto injection**: POST writes `creatorId = session.userId`; PUT writes `editorId = session.userId`; GET/GET_LIST append `creatorId = session.userId` to the filter when `access.byCreator` is on.
 - **Date coercion**: any body field ending in `At` is passed through `dayjs(value).toDate()` before write — accept ISO strings from clients.
 - **List filtering** (all querystring values are strings):
   - `key=a,b,c` → `IN (...)` when key ends with `Id`; otherwise `OR ILIKE %a% OR ILIKE %b%`
@@ -319,20 +323,20 @@ export const { GET } = route({
 ## Guardrails
 
 - Always pass `insertXxxSchema` to POST, `updateXxxSchema` (has `.required({ id: true })`) to PUT, `selectXxxSchema` to GET body, `queryListSchema(selectXxxSchema.partial())` to GET_LIST query.
-- Query-string schemas stay `z.string()` — numbers / arrays from querystrings must stay strings and be parsed inside `onSuccess` or `setParams`.
+- Query-string schemas stay `z.string()` — numbers / arrays from querystrings must stay strings and be parsed inside `handler` or `setParams`.
 - Do not reuse `insertSchema` for PUT — missing `id` silently dispatches an update without a where clause.
-- `bodySchema` on list/get is the **response item** schema, not the query shape. Query shape goes in `querySchema`.
+- `schemas.response` on list/get is the **response item** schema, not the query shape. Query shape goes in `schemas.query`.
 - Do not inline `{ db, getSession }` into individual route files — always import the pre-bound `postOperation` / `getListOperation` / … from `@backend/utils/route-operation` so session/DB swaps are one-file changes.
 - `jsonb` columns declared with `jsonb(...)` carry no zod info — extend the matching insert/select schema with `.merge(z.object({ field: z.array(z.string()).optional() }))` to keep typing accurate.
-- Swallowing errors: an unhandled throw in a handler propagates to next-rest-framework as a 500. Provide `onError` for any operation exposed to untrusted clients.
+- Swallowing errors: an unhandled throw in a handler propagates to next-rest-framework as a 500. Provide `catch` for any operation exposed to untrusted clients.
 - For non-CRUD behavior (middleware chains, streaming, custom `TypedNextResponse` unions, RPC) stop using these factories and switch to the `create-next-rest-framework-api` skill.
 
 ## Escape Hatches
 
 - Extra server-side filters — `setParams(req) => Promise<Record<string, unknown>>` on GET/GET_LIST; returned keys are merged into the filter.
-- Extra columns on write — `setBody(req) => Promise<Partial<infer<IB>>>` on POST/PUT; returned fields are merged into the body before validation runs against `bodySchema`.
-- Post-processing output — `onSuccess({ params, data, req }) => Promise<data>`; POST/PUT params are inferred from `bodySchema`, and on GET_LIST `data` is `{ data, total }`.
-- Error rewriting — `onError(err) => Promise<Response | undefined>`. Return `undefined` to rethrow.
+- Extra columns on write — `setBody(req) => Promise<Partial<infer<IB>>>` on POST/PUT; returned fields are merged into the body before validation runs against `schemas.body`.
+- Post-processing output — `handler({ params, data, req }) => Promise<data>`; POST/PUT params are inferred from `schemas.body`, and on GET_LIST `data` is `{ data, total }`.
+- Error rewriting — `catch(err) => Promise<Response | undefined>`. Return `undefined` to rethrow.
 
 ## Imports
 
@@ -350,6 +354,6 @@ ESM consumers can substitute `/es/backend/...` instead of `/lib/backend/...` whe
 - Route files contain zero hand-written `{ db, getSession }` wiring; all operations come from `@backend/utils/route-operation`.
 - Each domain has a `table.ts` (columns + `createTableSchema`) and an `index.ts` (five zod schemas + re-exports).
 - Every list endpoint accepts `current / pageSize / orderBy / orderDir / *AtFrom / *AtTo` and — where applicable — `jsonArrayFields` is declared.
-- `byCreator` is explicitly set when the endpoint is admin-facing or otherwise crosses ownership boundaries.
+- `access.byCreator` is explicitly set when the endpoint is admin-facing or otherwise crosses ownership boundaries.
 - Non-CRUD endpoints are implemented via raw `routeOperation` + action helpers, not by forcing a CRUD factory.
 - `next-rest-framework validate` / `generate` (from the partner skill) still pass — the factory values are plain `RouteOperationDefinition` and participate in OpenAPI generation.

@@ -1,105 +1,27 @@
-import { routeOperation, TypedNextResponse } from "next-rest-framework";
-import { z } from "zod";
-import { BaseTable } from "@/backend/sqlite/types";
-import getTableName from "@/backend/sqlite/route-operation/get-table-name";
-import {
-  createOpenApiOperation,
-  type RouteOpenApiOperation,
-} from "@/backend/route-operation/open-api-operation";
-import { createDeleteAction } from "@/backend/sqlite/actions";
 import { NextRequest } from "next/server";
-import { HttpError } from "@/backend/sqlite/errors";
+import { ZodSchema } from "zod";
+import { createDeleteAction } from "../actions/create-delete-action";
+import { BaseTable } from "../types";
+import {
+  createDeleteOperationFactory,
+  type DeleteOperationOptions as CoreDeleteOperationOptions,
+} from "@/backend/route-operation/operation-core";
+import getTableName from "./get-table-name";
 
-const defaultDeleteBodySchema = z.object({
-  id: z.string(),
+export type DeleteOperationOptions<
+  TTable extends BaseTable,
+  B extends ZodSchema,
+> = CoreDeleteOperationOptions<TTable, B>;
+
+const createOperation = createDeleteOperationFactory<BaseTable>({
+  createAction: createDeleteAction as any,
+  getTableName,
 });
 
-type DeleteOperationParams<B extends z.ZodSchema> = z.infer<B> &
-  Record<string, unknown> & {
-    creatorId?: string;
-    id: string;
-  };
-
-export interface DeleteOperationOptions<
-  TTable extends BaseTable,
-  B extends z.ZodSchema,
-> {
-  table?: TTable;
-  bodySchema?: B;
-  openApiOperation?: RouteOpenApiOperation;
-  onSuccess?: (_payload: {
-    params: DeleteOperationParams<B>;
-    data: unknown;
-  }) => Promise<void>;
-  onError?: (
-    _error: Error,
-  ) => Promise<ReturnType<(typeof TypedNextResponse)["json"]> | undefined>;
-  byCreator?: boolean;
-}
-export const createDeleteOperation =
-  ({
-    db,
-    getSession,
-  }: {
-    db?: any;
-    getSession: (_req: NextRequest) => Promise<{ userId?: string } | undefined>;
-  }) =>
-  <
-    TTable extends BaseTable,
-    B extends z.ZodSchema = typeof defaultDeleteBodySchema,
-  >({
-    table,
-    bodySchema = defaultDeleteBodySchema as unknown as B,
-    openApiOperation,
-    onSuccess,
-    onError,
-    byCreator = true,
-  }: DeleteOperationOptions<TTable, B>) =>
-    routeOperation({
-      method: "DELETE",
-      openApiOperation: createOpenApiOperation({
-        defaultTags: table ? [getTableName(table)] : [],
-        openApiOperation,
-      }),
-    })
-      .input({
-        body: bodySchema,
-        contentType: "application/json",
-      })
-      .handler(async (req) => {
-        try {
-          const body = bodySchema.parse(
-            await req.json(),
-          ) as DeleteOperationParams<B>;
-          if (byCreator) {
-            const { userId } = (await getSession(req)) || {};
-            body.creatorId = userId;
-          }
-          const tableParams = body as unknown as {
-            id: string;
-            creatorId?: string;
-          };
-          const data =
-            table && db
-              ? await createDeleteAction({ table, db })(tableParams)
-              : body;
-          await onSuccess?.({ data, params: body });
-          return TypedNextResponse.json(data, {
-            status: 200,
-          });
-        } catch (e) {
-          if (!(e instanceof HttpError)) {
-            console.error(e);
-          }
-          const response = await onError?.(e as Error);
-          if (response) {
-            return response;
-          }
-          if (e instanceof HttpError) {
-            return TypedNextResponse.json({ message: e.message } as never, {
-              status: e.status,
-            });
-          }
-          throw e;
-        }
-      });
+export const createDeleteOperation = ({
+  db,
+  getSession,
+}: {
+  db?: unknown;
+  getSession(req: NextRequest): Promise<{ userId?: string } | undefined>;
+}) => createOperation({ db, getSession });
