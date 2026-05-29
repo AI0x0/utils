@@ -1,13 +1,28 @@
 import { z, ZodSchema } from "zod";
 import { SQLiteTable } from "drizzle-orm/sqlite-core";
 import { NextRequest } from "next/server";
-import {
-  routeOperation,
-  TypedNextRequest,
-  TypedNextResponse,
-} from "next-rest-framework";
+import { routeOperation, TypedNextResponse } from "next-rest-framework";
 import getTableName from "./get-table-name";
 import { createPostAction } from "../actions";
+
+async function readPostBody(
+  req: NextRequest,
+  {
+    contentType,
+    parseBody,
+  }: {
+    contentType: string;
+    parseBody?: (_req: NextRequest) => Promise<Record<string, unknown>>;
+  },
+) {
+  if (parseBody) {
+    return parseBody(req);
+  }
+  if (contentType === "multipart/form-data") {
+    return Object.fromEntries(await req.formData());
+  }
+  return (await req.json()) as Record<string, unknown>;
+}
 
 export interface PostOperationOptions<
   IB extends ZodSchema,
@@ -15,15 +30,16 @@ export interface PostOperationOptions<
   TTable extends SQLiteTable,
 > {
   bodySchema: IB;
+  contentType?: string;
   outputBodySchema?: IB;
-  setBody?: (
-    _req: TypedNextRequest<"POST", "application/json", z.infer<IB>>,
-  ) => Promise<Partial<z.infer<IB>>>;
+  parseBody?: (_req: NextRequest) => Promise<Record<string, unknown>>;
+  setBody?: (_req: NextRequest) => Promise<Partial<z.infer<IB>>>;
   summary?: string;
   tags?: string[];
   onSuccess?: (_payload: {
     params: Record<string, unknown>;
     data: z.infer<OB>;
+    req: NextRequest;
   }) => Promise<z.infer<OB>>;
   onError?: (
     _error: Error,
@@ -41,7 +57,9 @@ export const createPostOperation: any =
   }) =>
   <IB extends ZodSchema, OB extends ZodSchema, TTable extends SQLiteTable>({
     bodySchema,
+    contentType = "application/json",
     outputBodySchema,
+    parseBody,
     setBody,
     summary,
     tags,
@@ -58,7 +76,7 @@ export const createPostOperation: any =
     })
       .input({
         body: bodySchema,
-        contentType: "application/json",
+        contentType,
       })
       .outputs([
         {
@@ -70,15 +88,8 @@ export const createPostOperation: any =
       .handler(async (req) => {
         try {
           const { userId } = (await getSession(req)) || {};
-          const body = (await req.json()) as Record<string, unknown>;
-          const extraBody =
-            (await setBody?.(
-              req as unknown as TypedNextRequest<
-                "POST",
-                "application/json",
-                z.infer<IB>
-              >,
-            )) || {};
+          const body = await readPostBody(req, { contentType, parseBody });
+          const extraBody = (await setBody?.(req)) || {};
           const mergedBody = { ...body, ...extraBody } as unknown as Record<
             string,
             unknown
@@ -96,6 +107,7 @@ export const createPostOperation: any =
             ? await onSuccess({
                 data: raw as unknown as z.infer<OB>,
                 params,
+                req,
               })
             : (raw as unknown as z.infer<OB>);
           return TypedNextResponse.json(data as z.infer<OB>, {

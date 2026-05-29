@@ -87,16 +87,18 @@ export const getListOperation = createGetListOperation({ db, getSession });
 
 ## Factory Catalog
 
-| Export              | Purpose                    | Required options            | Notable optional options                                                                                     |
-| ------------------- | -------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `createTableSchema` | pg `Table` + 5 zod schemas | `name`, `columns`           | `refineSchema`, `extraConfig`                                                                                |
-| `getOperation`      | GET one by filters         | `bodySchema`, `querySchema` | `table`, `setParams`, `relations`, `jsonArrayFields`, `byCreator`, `onSuccess`, `onError`, `summary`, `tags` |
-| `getListOperation`  | GET paginated list         | `bodySchema`, `querySchema` | `table`, `setParams`, `relations`, `jsonArrayFields`, `onSuccess`, `onError`, `summary`, `tags`              |
-| `postOperation`     | POST create                | `bodySchema`                | `table`, `outputBodySchema`, `setBody`, `onSuccess`, `onError`, `summary`, `tags`                            |
-| `putOperation`      | PUT update                 | `bodySchema`                | `table`, `outputBodySchema`, `setBody`, `byCreator`, `onSuccess`, `onError`, `summary`, `tags`               |
-| `deleteOperation`   | DELETE                     | —                           | `table`, `byCreator`, `onSuccess`, `onError`, `summary`, `tags`                                              |
+| Export              | Purpose                    | Required options            | Notable optional options                                                                                      |
+| ------------------- | -------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `createTableSchema` | pg `Table` + 5 zod schemas | `name`, `columns`           | `refineSchema`, `extraConfig`                                                                                 |
+| `getOperation`      | GET one by filters         | `bodySchema`, `querySchema` | `table`, `setParams`, `relations`, `jsonArrayFields`, `byCreator`, `onSuccess`, `onError`, `summary`, `tags`  |
+| `getListOperation`  | GET paginated list         | `bodySchema`, `querySchema` | `table`, `setParams`, `relations`, `jsonArrayFields`, `onSuccess`, `onError`, `summary`, `tags`               |
+| `postOperation`     | POST create                | `bodySchema`                | `table`, `contentType`, `parseBody`, `outputBodySchema`, `setBody`, `onSuccess`, `onError`, `summary`, `tags` |
+| `putOperation`      | PUT update                 | `bodySchema`                | `table`, `outputBodySchema`, `setBody`, `byCreator`, `onSuccess`, `onError`, `summary`, `tags`                |
+| `deleteOperation`   | DELETE                     | —                           | `table`, `byCreator`, `onSuccess`, `onError`, `summary`, `tags`                                               |
 
 `tags` can be passed manually to override the default OpenAPI tag inferred from `table`.
+
+`postOperation` defaults to `contentType: "application/json"`. Pass `contentType: "multipart/form-data"` to read `await req.formData()` as body, or pass both a custom `contentType` and `parseBody(req)` for custom payload parsing.
 
 `table` and factory-level `db` are optional for route operations. When `table` is omitted or `db` is not provided, the operation still parses input, applies `setParams` / `setBody`, session-derived fields, and `onSuccess`, but skips the built-in table action (`select` / `insert` / `update` / `delete`). Use this for custom endpoints that want the same OpenAPI and response wiring without a direct table operation.
 
@@ -342,13 +344,13 @@ export const { GET } = route({
 - Do not inline `{ db, getSession }` into individual route files — always import the pre-bound `postOperation` / `getListOperation` / … from `@backend/utils/route-operation` so session/DB swaps are one-file changes.
 - `jsonb` columns declared with `jsonb(...)` carry no zod info — extend the matching insert/select schema with `.merge(z.object({ field: z.array(z.string()).optional() }))` to keep typing accurate.
 - Swallowing errors: an unhandled throw in a handler propagates to next-rest-framework as a 500. Provide `onError` for any operation exposed to untrusted clients.
-- For non-CRUD behavior (middleware chains, streaming, multipart, `TypedNextResponse` unions, RPC) stop using these factories and switch to the `create-next-rest-framework-api` skill.
+- For non-CRUD behavior (middleware chains, streaming, custom `TypedNextResponse` unions, RPC) stop using these factories and switch to the `create-next-rest-framework-api` skill.
 
 ## Escape Hatches
 
 - Extra server-side filters — `setParams(req) => Promise<Record<string, unknown>>` on GET/GET_LIST; returned keys are merged into the filter.
 - Extra columns on write — `setBody(req) => Promise<Partial<infer<IB>>>` on POST/PUT; returned fields are merged into the body before validation runs against `bodySchema`.
-- Post-processing output — `onSuccess({ params, data }) => Promise<data>`; on GET_LIST `data` is `{ data, total }`.
+- Post-processing output — `onSuccess({ params, data, req }) => Promise<data>`; on GET_LIST `data` is `{ data, total }`.
 - Error rewriting — `onError(err) => Promise<Response | undefined>`. Return `undefined` to rethrow.
 
 ## Imports

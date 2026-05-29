@@ -110,10 +110,13 @@ describe("route operation onSuccess payload", () => {
 
     const res = await operation._handler(makeReq({ name: "test" }));
 
-    expect(onSuccess).toHaveBeenCalledWith({
-      data: { id: "id-1", name: "foo" },
-      params: { creatorId: "user-1", name: "test" },
-    });
+    expect(onSuccess).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: { id: "id-1", name: "foo" },
+        params: { creatorId: "user-1", name: "test" },
+        req: expect.any(Object),
+      }),
+    );
     expect(res.data.extra).toBe(true);
   });
 

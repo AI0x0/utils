@@ -230,10 +230,13 @@ describe("createPostOperation", () => {
       makeReq({ name: "test" }),
     );
     expect(db.insert).not.toHaveBeenCalled();
-    expect(onSuccess).toHaveBeenCalledWith({
-      data: { creatorId: "user-1", name: "test" },
-      params: { creatorId: "user-1", name: "test" },
-    });
+    expect(onSuccess).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: { creatorId: "user-1", name: "test" },
+        params: { creatorId: "user-1", name: "test" },
+        req: expect.any(Object),
+      }),
+    );
     expect(res.data.name).toBe("test");
     expect(res.data.ok).toBe(true);
   });
