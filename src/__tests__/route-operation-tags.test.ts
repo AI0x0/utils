@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { pgTable, text } from "drizzle-orm/pg-core";
 import { basicFields } from "@/backend/schemas";
 
@@ -30,12 +31,14 @@ const testTable = pgTable("items", {
   name: text("name"),
 });
 
+const mockDb = {} as unknown as NodePgDatabase<Record<string, unknown>>;
+
 describe("route operation tags", () => {
   it("支持手动传 OpenAPI tags", async () => {
     const { createPostOperation } =
       await import("@/backend/route-operation/post-operation");
     const operation = createPostOperation({
-      db: {},
+      db: mockDb,
       getSession: async () => ({ userId: "user-1" }),
     })({
       bodySchema: z.object({ name: z.string() }),

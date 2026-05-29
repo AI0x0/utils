@@ -41,7 +41,7 @@ export interface GetListOperationOptions<
   ) => Promise<ReturnType<(typeof TypedNextResponse)["json"]> | undefined>;
 }
 
-export const createGetListOperation: any =
+export const createGetListOperation =
   ({
     db,
     getSession,

@@ -35,7 +35,7 @@ export interface PutOperationOptions<
   byCreator?: boolean;
 }
 
-export const createPutOperation: any =
+export const createPutOperation =
   ({
     getSession,
     db,

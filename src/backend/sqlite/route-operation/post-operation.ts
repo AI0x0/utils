@@ -47,7 +47,7 @@ export interface PostOperationOptions<
   table?: TTable;
 }
 
-export const createPostOperation: any =
+export const createPostOperation =
   ({
     getSession,
     db,
