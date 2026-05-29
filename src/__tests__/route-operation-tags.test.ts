@@ -34,7 +34,7 @@ const testTable = pgTable("items", {
 const mockDb = {} as unknown as NodePgDatabase<Record<string, unknown>>;
 
 describe("route operation tags", () => {
-  it("支持手动传 OpenAPI tags 和 description", async () => {
+  it("支持通过 openApiOperation 传 OpenAPI 元信息", async () => {
     const { createPostOperation } =
       await import("@/backend/route-operation/post-operation");
     const operation = createPostOperation({
@@ -42,11 +42,15 @@ describe("route operation tags", () => {
       getSession: async () => ({ userId: "user-1" }),
     })({
       bodySchema: z.object({ name: z.string() }),
-      description: "Create an item with custom docs.",
+      openApiOperation: {
+        deprecated: true,
+        description: "Create an item with custom docs.",
+        tags: ["manual", "custom"],
+      },
       table: testTable,
-      tags: ["manual", "custom"],
     }) as unknown as Operation;
 
+    expect(operation._options.openApiOperation.deprecated).toBe(true);
     expect(operation._options.openApiOperation.description).toBe(
       "Create an item with custom docs.",
     );

@@ -87,18 +87,16 @@ export const getListOperation = createGetListOperation({ db, getSession });
 
 ## Factory Catalog
 
-| Export              | Purpose                    | Required options            | Notable optional options                                                                                                     |
-| ------------------- | -------------------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `createTableSchema` | pg `Table` + 5 zod schemas | `name`, `columns`           | `refineSchema`, `extraConfig`                                                                                                |
-| `getOperation`      | GET one by filters         | `bodySchema`, `querySchema` | `table`, `setParams`, `relations`, `jsonArrayFields`, `byCreator`, `onSuccess`, `onError`, `summary`, `description`, `tags`  |
-| `getListOperation`  | GET paginated list         | `bodySchema`, `querySchema` | `table`, `setParams`, `relations`, `jsonArrayFields`, `onSuccess`, `onError`, `summary`, `description`, `tags`               |
-| `postOperation`     | POST create                | `bodySchema`                | `table`, `contentType`, `parseBody`, `outputBodySchema`, `setBody`, `onSuccess`, `onError`, `summary`, `description`, `tags` |
-| `putOperation`      | PUT update                 | `bodySchema`                | `table`, `outputBodySchema`, `setBody`, `byCreator`, `onSuccess`, `onError`, `summary`, `description`, `tags`                |
-| `deleteOperation`   | DELETE                     | —                           | `table`, `byCreator`, `onSuccess`, `onError`, `summary`, `description`, `tags`                                               |
+| Export              | Purpose                    | Required options            | Notable optional options                                                                                       |
+| ------------------- | -------------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `createTableSchema` | pg `Table` + 5 zod schemas | `name`, `columns`           | `refineSchema`, `extraConfig`                                                                                  |
+| `getOperation`      | GET one by filters         | `bodySchema`, `querySchema` | `table`, `setParams`, `relations`, `jsonArrayFields`, `byCreator`, `onSuccess`, `onError`, `openApiOperation`  |
+| `getListOperation`  | GET paginated list         | `bodySchema`, `querySchema` | `table`, `setParams`, `relations`, `jsonArrayFields`, `onSuccess`, `onError`, `openApiOperation`               |
+| `postOperation`     | POST create                | `bodySchema`                | `table`, `contentType`, `parseBody`, `outputBodySchema`, `setBody`, `onSuccess`, `onError`, `openApiOperation` |
+| `putOperation`      | PUT update                 | `bodySchema`                | `table`, `outputBodySchema`, `setBody`, `byCreator`, `onSuccess`, `onError`, `openApiOperation`                |
+| `deleteOperation`   | DELETE                     | —                           | `table`, `bodySchema`, `byCreator`, `onSuccess`, `onError`, `openApiOperation`                                 |
 
-`tags` can be passed manually to override the default OpenAPI tag inferred from `table`.
-
-`summary` and `description` are forwarded into the OpenAPI operation object.
+`openApiOperation` is spread directly into the `next-rest-framework` operation metadata. Use it for `summary`, `description`, `tags`, `deprecated`, `security`, `externalDocs`, and future OpenAPI operation fields. When omitted, `tags` defaults to the table name when `table` is supplied.
 
 `postOperation` defaults to `contentType: "application/json"`. Pass `contentType: "multipart/form-data"` to read `await req.formData()` as body, or pass both a custom `contentType` and `parseBody(req)` for custom payload parsing.
 
@@ -196,7 +194,7 @@ export const { POST, GET, DELETE, PUT } = route({
     querySchema: queryAgentSchema,
     bodySchema: selectAgentSchema,
     table: agents,
-    summary: "助手详情",
+    openApiOperation: { summary: "助手详情" },
     setParams: async (req) => {
       const { userId } = (await getSession(req)) || {};
       await seedAgentData(userId as string);
@@ -206,17 +204,17 @@ export const { POST, GET, DELETE, PUT } = route({
   postAgent: postOperation({
     bodySchema: insertAgentSchema,
     table: agents,
-    summary: "添加助手",
+    openApiOperation: { summary: "添加助手" },
     setBody: async () => ({ tags: ["my"] }),
   }),
   putAgent: putOperation({
     bodySchema: updateAgentSchema,
     table: agents,
-    summary: "编辑助手",
+    openApiOperation: { summary: "编辑助手" },
   }),
   deleteAgent: deleteOperation({
     table: agents,
-    summary: "删除助手",
+    openApiOperation: { summary: "删除助手" },
   }),
 });
 ```
@@ -242,7 +240,7 @@ export const { GET } = route({
     querySchema: queryListChannelSchema,
     bodySchema: queryListSelectChannelSchema,
     table: channels,
-    summary: "获取渠道列表",
+    openApiOperation: { summary: "获取渠道列表" },
     relations: [
       {
         table: models,

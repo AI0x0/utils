@@ -2,6 +2,10 @@ import { routeOperation, TypedNextResponse } from "next-rest-framework";
 import { z } from "zod";
 import { BaseTable } from "@/backend/sqlite/types";
 import getTableName from "@/backend/sqlite/route-operation/get-table-name";
+import {
+  createOpenApiOperation,
+  type RouteOpenApiOperation,
+} from "@/backend/route-operation/open-api-operation";
 import { createDeleteAction } from "@/backend/sqlite/actions";
 import { NextRequest } from "next/server";
 import { HttpError } from "@/backend/sqlite/errors";
@@ -22,9 +26,7 @@ export interface DeleteOperationOptions<
 > {
   table?: TTable;
   bodySchema?: B;
-  description?: string;
-  summary?: string;
-  tags?: string[];
+  openApiOperation?: RouteOpenApiOperation;
   onSuccess?: (_payload: {
     params: DeleteOperationParams<B>;
     data: unknown;
@@ -48,20 +50,17 @@ export const createDeleteOperation =
   >({
     table,
     bodySchema = defaultDeleteBodySchema as unknown as B,
-    description,
-    summary,
-    tags,
+    openApiOperation,
     onSuccess,
     onError,
     byCreator = true,
   }: DeleteOperationOptions<TTable, B>) =>
     routeOperation({
       method: "DELETE",
-      openApiOperation: {
-        description,
-        summary,
-        tags: tags ?? (table ? [getTableName(table)] : []),
-      },
+      openApiOperation: createOpenApiOperation({
+        defaultTags: table ? [getTableName(table)] : [],
+        openApiOperation,
+      }),
     })
       .input({
         body: bodySchema,

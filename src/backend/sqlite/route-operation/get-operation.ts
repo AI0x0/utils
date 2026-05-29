@@ -6,6 +6,10 @@ import {
   TypedNextResponse,
 } from "next-rest-framework";
 import getTableName from "./get-table-name";
+import {
+  createOpenApiOperation,
+  type RouteOpenApiOperation,
+} from "@/backend/route-operation/open-api-operation";
 import { createGetAction } from "../actions";
 import { BaseTable, GetListRelations } from "@/backend/sqlite/types";
 
@@ -33,9 +37,7 @@ export interface GetOperationOptions<
   onError?: (
     _error: Error,
   ) => Promise<ReturnType<(typeof TypedNextResponse)["json"]> | undefined>;
-  description?: string;
-  summary?: string;
-  tags?: string[];
+  openApiOperation?: RouteOpenApiOperation;
   table?: TTable;
   byCreator?: boolean;
 }
@@ -52,9 +54,7 @@ export const createGetOperation =
     querySchema,
     bodySchema,
     table,
-    description,
-    summary,
-    tags,
+    openApiOperation,
     relations,
     setParams,
     jsonArrayFields,
@@ -64,11 +64,10 @@ export const createGetOperation =
   }: GetOperationOptions<T, Q, TTable>) =>
     routeOperation({
       method: "GET",
-      openApiOperation: {
-        description,
-        summary,
-        tags: tags ?? (table ? [getTableName(table)] : []),
-      },
+      openApiOperation: createOpenApiOperation({
+        defaultTags: table ? [getTableName(table)] : [],
+        openApiOperation,
+      }),
     })
       .input({
         query: querySchema as unknown as z.ZodType<

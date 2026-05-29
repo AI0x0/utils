@@ -3,3 +3,4 @@ export * from "./get-list-operation";
 export * from "./delete-operation";
 export * from "./post-operation";
 export * from "./put-operation";
+export * from "@/backend/route-operation/open-api-operation";

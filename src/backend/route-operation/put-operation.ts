@@ -6,6 +6,10 @@ import {
   TypedNextResponse,
 } from "next-rest-framework";
 import getTableName from "@/backend/route-operation/get-table-name";
+import {
+  createOpenApiOperation,
+  type RouteOpenApiOperation,
+} from "@/backend/route-operation/open-api-operation";
 import { createPutAction } from "@/backend/actions";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { NextRequest } from "next/server";
@@ -23,11 +27,9 @@ export interface PutOperationOptions<
   TTable extends PgTable,
 > {
   bodySchema: IB;
-  description?: string;
+  openApiOperation?: RouteOpenApiOperation;
   outputBodySchema?: OB;
   table?: TTable;
-  summary?: string;
-  tags?: string[];
   setBody?(
     req: TypedNextRequest<"PUT", "application/json", z.infer<IB>>,
   ): Promise<Partial<z.infer<IB>>>;
@@ -51,11 +53,9 @@ export const createPutOperation =
   }) =>
   <IB extends ZodSchema, OB extends ZodSchema, TTable extends BaseTable>({
     bodySchema,
-    description,
+    openApiOperation,
     outputBodySchema,
     table,
-    summary,
-    tags,
     setBody,
     onSuccess,
     byCreator = true,
@@ -63,11 +63,10 @@ export const createPutOperation =
   }: PutOperationOptions<IB, OB, TTable>) =>
     routeOperation({
       method: "PUT",
-      openApiOperation: {
-        description,
-        summary,
-        tags: tags ?? (table ? [getTableName(table)] : []),
-      },
+      openApiOperation: createOpenApiOperation({
+        defaultTags: table ? [getTableName(table)] : [],
+        openApiOperation,
+      }),
     })
       .input({
         body: bodySchema,

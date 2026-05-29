@@ -23,7 +23,9 @@ declare module "next-rest-framework" {
   export const routeOperation: <M extends string>(opts: {
     method: M;
     openApiOperation?: {
+      deprecated?: boolean;
       description?: string;
+      security?: unknown[];
       summary?: string;
       tags?: string[];
     };

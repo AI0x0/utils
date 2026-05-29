@@ -6,6 +6,10 @@ import {
   TypedNextResponse,
 } from "next-rest-framework";
 import getTableName from "./get-table-name";
+import {
+  createOpenApiOperation,
+  type RouteOpenApiOperation,
+} from "./open-api-operation";
 import { listBodySchema } from "@/backend/schemas";
 import { createGetListAction } from "@/backend/actions";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
@@ -29,9 +33,7 @@ export interface GetListOperationOptions<
     req: TypedNextRequest<"GET", "application/json", unknown, z.infer<Q>>,
   ): Promise<Record<string, unknown>>;
   byCreator?: boolean;
-  description?: string;
-  summary?: string;
-  tags?: string[];
+  openApiOperation?: RouteOpenApiOperation;
   table?: TTable;
   onSuccess?<D extends T>(payload: {
     params: GetListOperationParams<Q>;
@@ -60,9 +62,7 @@ export const createGetListOperation =
     querySchema,
     bodySchema,
     table,
-    description,
-    summary,
-    tags,
+    openApiOperation,
     relations,
     jsonArrayFields,
     setParams,
@@ -72,11 +72,10 @@ export const createGetListOperation =
   }: GetListOperationOptions<T, Q, TTable>) =>
     routeOperation({
       method: "GET",
-      openApiOperation: {
-        description,
-        summary,
-        tags: tags ?? (table ? [getTableName(table)] : []),
-      },
+      openApiOperation: createOpenApiOperation({
+        defaultTags: table ? [getTableName(table)] : [],
+        openApiOperation,
+      }),
     })
       .input({
         query: querySchema as unknown as z.ZodType<

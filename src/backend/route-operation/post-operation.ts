@@ -3,6 +3,10 @@ import { PgTable } from "drizzle-orm/pg-core";
 import { NextRequest } from "next/server";
 import { routeOperation, TypedNextResponse } from "next-rest-framework";
 import getTableName from "./get-table-name";
+import {
+  createOpenApiOperation,
+  type RouteOpenApiOperation,
+} from "./open-api-operation";
 import { createPostAction } from "../actions";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 
@@ -37,12 +41,10 @@ export interface PostOperationOptions<
 > {
   bodySchema: IB;
   contentType?: string;
-  description?: string;
+  openApiOperation?: RouteOpenApiOperation;
   outputBodySchema?: OB;
   parseBody?(req: NextRequest): Promise<Record<string, unknown>>;
   setBody?(req: NextRequest): Promise<Partial<z.infer<IB>>>;
-  summary?: string;
-  tags?: string[];
   onSuccess?(payload: {
     params: PostOperationParams<IB>;
     data: z.infer<OB>;
@@ -65,23 +67,20 @@ export const createPostOperation =
   <IB extends ZodSchema, OB extends ZodSchema, TTable extends PgTable>({
     bodySchema,
     contentType = "application/json",
-    description,
+    openApiOperation,
     outputBodySchema,
     parseBody,
     setBody,
-    summary,
-    tags,
     table,
     onSuccess,
     onError,
   }: PostOperationOptions<IB, OB, TTable>) =>
     routeOperation({
       method: "POST",
-      openApiOperation: {
-        description,
-        summary,
-        tags: tags ?? (table ? [getTableName(table)] : []),
-      },
+      openApiOperation: createOpenApiOperation({
+        defaultTags: table ? [getTableName(table)] : [],
+        openApiOperation,
+      }),
     })
       .input({
         body: bodySchema,

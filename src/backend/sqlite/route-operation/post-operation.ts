@@ -3,6 +3,10 @@ import { SQLiteTable } from "drizzle-orm/sqlite-core";
 import { NextRequest } from "next/server";
 import { routeOperation, TypedNextResponse } from "next-rest-framework";
 import getTableName from "./get-table-name";
+import {
+  createOpenApiOperation,
+  type RouteOpenApiOperation,
+} from "@/backend/route-operation/open-api-operation";
 import { createPostAction } from "../actions";
 
 async function readPostBody(
@@ -36,12 +40,10 @@ export interface PostOperationOptions<
 > {
   bodySchema: IB;
   contentType?: string;
-  description?: string;
+  openApiOperation?: RouteOpenApiOperation;
   outputBodySchema?: OB;
   parseBody?: (_req: NextRequest) => Promise<Record<string, unknown>>;
   setBody?: (_req: NextRequest) => Promise<Partial<z.infer<IB>>>;
-  summary?: string;
-  tags?: string[];
   onSuccess?: (_payload: {
     params: PostOperationParams<IB>;
     data: z.infer<OB>;
@@ -64,23 +66,20 @@ export const createPostOperation =
   <IB extends ZodSchema, OB extends ZodSchema, TTable extends SQLiteTable>({
     bodySchema,
     contentType = "application/json",
-    description,
+    openApiOperation,
     outputBodySchema,
     parseBody,
     setBody,
-    summary,
-    tags,
     table,
     onSuccess,
     onError,
   }: PostOperationOptions<IB, OB, TTable>) =>
     routeOperation({
       method: "POST",
-      openApiOperation: {
-        description,
-        summary,
-        tags: tags ?? (table ? [getTableName(table)] : []),
-      },
+      openApiOperation: createOpenApiOperation({
+        defaultTags: table ? [getTableName(table)] : [],
+        openApiOperation,
+      }),
     })
       .input({
         body: bodySchema,
