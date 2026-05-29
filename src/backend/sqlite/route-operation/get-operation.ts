@@ -9,6 +9,11 @@ import getTableName from "./get-table-name";
 import { createGetAction } from "../actions";
 import { BaseTable, GetListRelations } from "@/backend/sqlite/types";
 
+type GetOperationParams<Q extends ZodSchema> = z.infer<Q> &
+  Record<string, unknown> & {
+    creatorId?: string;
+  };
+
 export interface GetOperationOptions<
   T extends ZodSchema,
   Q extends ZodSchema,
@@ -22,7 +27,7 @@ export interface GetOperationOptions<
     _req: TypedNextRequest<"GET", "application/json", unknown, z.infer<Q>>,
   ) => Promise<Record<string, unknown>>;
   onSuccess?: (_payload: {
-    params: Partial<z.infer<T>> & Record<string, unknown>;
+    params: GetOperationParams<Q>;
     data: z.infer<T>;
   }) => Promise<z.infer<T>>;
   onError?: (
@@ -79,7 +84,7 @@ export const createGetOperation =
       ])
       .handler(async (req) => {
         try {
-          const params: Record<string, unknown> =
+          const extraParams: Record<string, unknown> =
             (await setParams?.(
               req as unknown as TypedNextRequest<
                 "GET",
@@ -90,13 +95,18 @@ export const createGetOperation =
             )) || {};
           if (byCreator) {
             const { userId } = (await getSession(req)) || {};
-            params.creatorId = userId;
+            extraParams.creatorId = userId;
           }
 
-          const mergedParams = Object.assign(
+          const queryParams = querySchema.parse(
             Object.fromEntries(new URL(req.url).searchParams),
-            params,
-          ) as Partial<z.infer<T>> & Record<string, unknown>;
+          ) as z.infer<Q> & Record<string, unknown>;
+          const mergedParams = {
+            ...queryParams,
+            ...extraParams,
+          } as GetOperationParams<Q>;
+          const tableParams = mergedParams as Partial<z.infer<T>> &
+            Record<string, unknown>;
           const rawResult =
             table && db
               ? await createGetAction({
@@ -105,7 +115,7 @@ export const createGetOperation =
                   jsonArrayFields,
                   relations,
                   table,
-                })(mergedParams)
+                })(tableParams)
               : mergedParams;
           let result = (rawResult ?? ({} as z.infer<T>)) as z.infer<T>;
           if (onSuccess) {

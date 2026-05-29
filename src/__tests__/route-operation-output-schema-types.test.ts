@@ -23,6 +23,10 @@ vi.mock("next/server", () => ({
   NextRequest: class {},
 }));
 
+// =============================================================================
+// Route operation payload type regressions
+// =============================================================================
+
 describe("route operation output schema types", () => {
   it("postOperation 支持入参和出参使用不同 schema", async () => {
     const { createPostOperation } =
@@ -78,6 +82,102 @@ describe("route operation output schema types", () => {
       bodySchema,
       onSuccess: async ({ params }) => createPayload(params),
       outputBodySchema,
+    });
+
+    expect(operation).toBeDefined();
+    expect(sqliteOperation).toBeDefined();
+  }, 10000);
+
+  it("getOperation 的 onSuccess params 根据 querySchema 推导", async () => {
+    const { createGetOperation } =
+      await import("@/backend/route-operation/get-operation");
+    const { createGetOperation: createSqliteGetOperation } =
+      await import("@/backend/sqlite/route-operation/get-operation");
+    const querySchema = z.object({
+      logs: z.coerce.boolean().optional(),
+      model: z.string().min(1),
+      requestId: z.string().min(1),
+    });
+    const bodySchema = z.object({
+      status: z.string(),
+    });
+    const getSession = vi.fn(async () => undefined);
+    const getStatus = (input: z.infer<typeof querySchema>) =>
+      Promise.resolve({ status: input.requestId });
+
+    const operation = createGetOperation({ getSession })({
+      bodySchema,
+      onSuccess: async ({ params }) => getStatus(params),
+      querySchema,
+    });
+    const sqliteOperation = createSqliteGetOperation({ getSession })({
+      bodySchema,
+      onSuccess: async ({ params }) => getStatus(params),
+      querySchema,
+    });
+
+    expect(operation).toBeDefined();
+    expect(sqliteOperation).toBeDefined();
+  }, 10000);
+
+  it("getListOperation 的 onSuccess params 根据 querySchema 推导", async () => {
+    const { createGetListOperation } =
+      await import("@/backend/route-operation/get-list-operation");
+    const { createGetListOperation: createSqliteGetListOperation } =
+      await import("@/backend/sqlite/route-operation/get-list-operation");
+    const querySchema = z.object({
+      current: z.coerce.number().optional(),
+      keyword: z.string().optional(),
+      pageSize: z.coerce.number().optional(),
+    });
+    const bodySchema = z.object({
+      id: z.string(),
+      title: z.string(),
+    });
+    const getSession = vi.fn(async () => undefined);
+    const getList = (input: z.infer<typeof querySchema>) =>
+      Promise.resolve({
+        data: [{ id: input.keyword || "id", title: "title" }],
+        total: input.pageSize || 1,
+      });
+
+    const operation = createGetListOperation({ getSession })({
+      bodySchema,
+      onSuccess: async ({ params }) => getList(params),
+      querySchema,
+    });
+    const sqliteOperation = createSqliteGetListOperation({ getSession })({
+      bodySchema,
+      onSuccess: async ({ params }) => getList(params),
+      querySchema,
+    });
+
+    expect(operation).toBeDefined();
+    expect(sqliteOperation).toBeDefined();
+  }, 10000);
+
+  it("deleteOperation 的 onSuccess params 根据 bodySchema 推导", async () => {
+    const { createDeleteOperation } =
+      await import("@/backend/route-operation/delete-operation");
+    const { createDeleteOperation: createSqliteDeleteOperation } =
+      await import("@/backend/sqlite/route-operation/delete-operation");
+    const bodySchema = z.object({
+      id: z.string(),
+      planId: z.string(),
+    });
+    const getSession = vi.fn(async () => undefined);
+    const deleteDoc = (input: z.infer<typeof bodySchema>) => {
+      expect(input.planId).toBeDefined();
+      return Promise.resolve();
+    };
+
+    const operation = createDeleteOperation({ getSession })({
+      bodySchema,
+      onSuccess: async ({ params }) => deleteDoc(params),
+    });
+    const sqliteOperation = createSqliteDeleteOperation({ getSession })({
+      bodySchema,
+      onSuccess: async ({ params }) => deleteDoc(params),
     });
 
     expect(operation).toBeDefined();

@@ -1,5 +1,4 @@
-/* eslint-disable no-unused-vars */
-import { z } from "zod";
+import { z, ZodObject, ZodType } from "zod";
 import {
   integer,
   sqliteTable,
@@ -68,7 +67,7 @@ export const BASIC_UPDATE_OMIT = {
 } as const;
 
 //============================列表查询字段============================//
-export const queryListSchema = (schema: any) =>
+export const queryListSchema = <Incoming extends ZodObject>(schema: Incoming) =>
   z
     .object({
       current: z.string().optional().default("1"), // 默认页码为 1
@@ -82,7 +81,7 @@ export const queryListSchema = (schema: any) =>
     .merge(schema);
 
 //============================列表返回字段============================//
-export const listBodySchema = (schema: any) =>
+export const listBodySchema = <T extends ZodType>(schema: T) =>
   z.object({
     total: z.number(),
     data: z.array(schema),

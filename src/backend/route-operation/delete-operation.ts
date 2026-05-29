@@ -7,13 +7,27 @@ import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { NextRequest } from "next/server";
 import { HttpError } from "@/backend/errors";
 
-export interface DeleteOperationOptions<TTable extends BaseTable> {
+const defaultDeleteBodySchema = z.object({
+  id: z.string(),
+});
+
+type DeleteOperationParams<B extends z.ZodSchema> = z.infer<B> &
+  Record<string, unknown> & {
+    creatorId?: string;
+    id: string;
+  };
+
+export interface DeleteOperationOptions<
+  TTable extends BaseTable,
+  B extends z.ZodSchema,
+> {
   table?: TTable;
+  bodySchema?: B;
   description?: string;
   summary?: string;
   tags?: string[];
   onSuccess?: (payload: {
-    params: { id: string; creatorId?: string };
+    params: DeleteOperationParams<B>;
     data: unknown;
   }) => Promise<void>;
   onError?(
@@ -29,15 +43,19 @@ export const createDeleteOperation =
     db?: NodePgDatabase<Record<string, unknown>>;
     getSession(req: NextRequest): Promise<{ userId?: string } | undefined>;
   }) =>
-  <TTable extends BaseTable>({
+  <
+    TTable extends BaseTable,
+    B extends z.ZodSchema = typeof defaultDeleteBodySchema,
+  >({
     table,
+    bodySchema = defaultDeleteBodySchema as unknown as B,
     description,
     summary,
     tags,
     onSuccess,
     onError,
     byCreator = true,
-  }: DeleteOperationOptions<TTable>) =>
+  }: DeleteOperationOptions<TTable, B>) =>
     routeOperation({
       method: "DELETE",
       openApiOperation: {
@@ -47,23 +65,26 @@ export const createDeleteOperation =
       },
     })
       .input({
-        body: z.object({
-          id: z.string(),
-        }),
+        body: bodySchema,
         contentType: "application/json",
       })
       .handler(async (req) => {
         try {
-          const body: {
-            id: string;
-            creatorId?: string;
-          } = await req.json();
+          const body = bodySchema.parse(
+            await req.json(),
+          ) as DeleteOperationParams<B>;
           if (byCreator) {
             const { userId } = (await getSession(req)) || {};
             body.creatorId = userId;
           }
+          const tableParams = body as unknown as {
+            id: string;
+            creatorId?: string;
+          };
           const data =
-            table && db ? await createDeleteAction({ table, db })(body) : body;
+            table && db
+              ? await createDeleteAction({ table, db })(tableParams)
+              : body;
           await onSuccess?.({ data, params: body });
           return TypedNextResponse.json(data, {
             status: 200,

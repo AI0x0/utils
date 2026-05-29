@@ -10,6 +10,11 @@ import { listBodySchema } from "@/backend/sqlite/schemas";
 import { createGetListAction } from "@/backend/sqlite/actions";
 import { BaseTable, GetListRelations } from "@/backend/sqlite/types";
 
+type GetListOperationParams<Q extends ZodSchema> = z.infer<Q> &
+  Record<string, unknown> & {
+    creatorId?: string;
+  };
+
 export interface GetListOperationOptions<
   T extends ZodSchema,
   Q extends ZodSchema,
@@ -28,7 +33,7 @@ export interface GetListOperationOptions<
   tags?: string[];
   table?: TTable;
   onSuccess?: <D extends T>(_payload: {
-    params: Partial<z.infer<T>> & Record<string, unknown>;
+    params: GetListOperationParams<Q>;
     data: {
       data: z.infer<D>[];
       total: number;
@@ -86,7 +91,7 @@ export const createGetListOperation =
       ])
       .handler(async (req) => {
         try {
-          const params =
+          const extraParams: Record<string, unknown> =
             (await setParams?.(
               req as unknown as TypedNextRequest<
                 "GET",
@@ -97,13 +102,18 @@ export const createGetListOperation =
             )) || {};
           if (byCreator) {
             const { userId } = (await getSession(req)) || {};
-            params.creatorId = userId;
+            extraParams.creatorId = userId;
           }
 
-          const mergedParams = Object.assign(
+          const queryParams = querySchema.parse(
             Object.fromEntries(new URL(req.url).searchParams),
-            params,
-          ) as Partial<z.infer<T>> & Record<string, unknown>;
+          ) as z.infer<Q> & Record<string, unknown>;
+          const mergedParams = {
+            ...queryParams,
+            ...extraParams,
+          } as GetListOperationParams<Q>;
+          const tableParams = mergedParams as Partial<z.infer<T>> &
+            Record<string, unknown>;
           let result =
             table && db
               ? await createGetListAction({
@@ -112,7 +122,7 @@ export const createGetListOperation =
                   jsonArrayFields,
                   relations,
                   table,
-                })(mergedParams)
+                })(tableParams)
               : { data: [], total: 0 };
 
           if (onSuccess) {
