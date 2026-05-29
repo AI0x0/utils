@@ -12,6 +12,11 @@ import { NextRequest } from "next/server";
 import { BaseTable } from "@/backend/types";
 import { HttpError } from "@/backend/errors";
 
+type PutOperationParams<IB extends ZodSchema> = z.infer<IB> &
+  Record<string, unknown> & {
+    editorId?: string;
+  };
+
 export interface PutOperationOptions<
   IB extends ZodSchema,
   OB extends ZodSchema,
@@ -27,7 +32,7 @@ export interface PutOperationOptions<
     req: TypedNextRequest<"PUT", "application/json", z.infer<IB>>,
   ): Promise<Partial<z.infer<IB>>>;
   onSuccess?(payload: {
-    params: Record<string, unknown>;
+    params: PutOperationParams<IB>;
     data: z.infer<OB>;
   }): Promise<z.infer<OB>>;
   onError?(
@@ -103,7 +108,7 @@ export const createPutOperation =
           const data = onSuccess
             ? await onSuccess({
                 data: raw as unknown as z.infer<OB>,
-                params,
+                params: params as PutOperationParams<IB>,
               })
             : (raw as unknown as z.infer<OB>);
           return TypedNextResponse.json(data as z.infer<OB>, {

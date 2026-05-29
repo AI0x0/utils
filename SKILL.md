@@ -81,6 +81,8 @@ export const getListOperation = createGetListOperation({ db, getSession });
 
 `postOperation` defaults to `contentType: "application/json"`. Pass `contentType: "multipart/form-data"` to read `await req.formData()` as body, or pass both a custom `contentType` and `parseBody(req)` for custom payload parsing.
 
+In `postOperation` and `putOperation`, `onSuccess({ params })` is typed from `bodySchema` plus the injected `creatorId` / `editorId`, so custom action helpers can usually consume `params` directly without reparsing the body schema.
+
 `table` and factory-level `db` are optional for route operations. When `table` is omitted or `db` is not provided, the operation still parses input, applies `setParams` / `setBody`, session-derived fields, and `onSuccess`, but skips the built-in table action (`select` / `insert` / `update` / `delete`). Use this for custom endpoints that want the same OpenAPI and response wiring without a direct table operation.
 
 ## Canonical Examples
@@ -331,7 +333,7 @@ export const { GET } = route({
 
 - Extra server-side filters — `setParams(req) => Promise<Record<string, unknown>>` on GET/GET_LIST; returned keys are merged into the filter.
 - Extra columns on write — `setBody(req) => Promise<Partial<infer<IB>>>` on POST/PUT; returned fields are merged into the body before validation runs against `bodySchema`.
-- Post-processing output — `onSuccess({ params, data, req }) => Promise<data>`; on GET_LIST `data` is `{ data, total }`.
+- Post-processing output — `onSuccess({ params, data, req }) => Promise<data>`; POST/PUT params are inferred from `bodySchema`, and on GET_LIST `data` is `{ data, total }`.
 - Error rewriting — `onError(err) => Promise<Response | undefined>`. Return `undefined` to rethrow.
 
 ## Imports

@@ -25,6 +25,11 @@ async function readPostBody(
   return (await req.json()) as Record<string, unknown>;
 }
 
+type PostOperationParams<IB extends ZodSchema> = z.infer<IB> &
+  Record<string, unknown> & {
+    creatorId?: string;
+  };
+
 export interface PostOperationOptions<
   IB extends ZodSchema,
   OB extends ZodSchema,
@@ -39,7 +44,7 @@ export interface PostOperationOptions<
   summary?: string;
   tags?: string[];
   onSuccess?(payload: {
-    params: Record<string, unknown>;
+    params: PostOperationParams<IB>;
     data: z.infer<OB>;
     req: NextRequest;
   }): Promise<z.infer<OB>>;
@@ -110,7 +115,7 @@ export const createPostOperation =
           const data = onSuccess
             ? await onSuccess({
                 data: raw as unknown as z.infer<OB>,
-                params,
+                params: params as PostOperationParams<IB>,
                 req,
               })
             : (raw as unknown as z.infer<OB>);
