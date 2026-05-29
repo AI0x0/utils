@@ -32,7 +32,7 @@ export interface PostOperationOptions<
 > {
   bodySchema: IB;
   contentType?: string;
-  outputBodySchema?: IB;
+  outputBodySchema?: OB;
   parseBody?(req: NextRequest): Promise<Record<string, unknown>>;
   setBody?(req: NextRequest): Promise<Partial<z.infer<IB>>>;
   summary?: string;
