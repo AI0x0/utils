@@ -66,16 +66,18 @@ export const getListOperation = createGetListOperation({ db, getSession });
 
 ## Factory Catalog
 
-| Export              | Purpose                    | Required options            | Notable optional options                                                                                      |
-| ------------------- | -------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `createTableSchema` | pg `Table` + 5 zod schemas | `name`, `columns`           | `refineSchema`, `extraConfig`                                                                                 |
-| `getOperation`      | GET one by filters         | `bodySchema`, `querySchema` | `table`, `setParams`, `relations`, `jsonArrayFields`, `byCreator`, `onSuccess`, `onError`, `summary`, `tags`  |
-| `getListOperation`  | GET paginated list         | `bodySchema`, `querySchema` | `table`, `setParams`, `relations`, `jsonArrayFields`, `onSuccess`, `onError`, `summary`, `tags`               |
-| `postOperation`     | POST create                | `bodySchema`                | `table`, `contentType`, `parseBody`, `outputBodySchema`, `setBody`, `onSuccess`, `onError`, `summary`, `tags` |
-| `putOperation`      | PUT update                 | `bodySchema`                | `table`, `outputBodySchema`, `setBody`, `byCreator`, `onSuccess`, `onError`, `summary`, `tags`                |
-| `deleteOperation`   | DELETE                     | —                           | `table`, `byCreator`, `onSuccess`, `onError`, `summary`, `tags`                                               |
+| Export              | Purpose                    | Required options            | Notable optional options                                                                                                     |
+| ------------------- | -------------------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `createTableSchema` | pg `Table` + 5 zod schemas | `name`, `columns`           | `refineSchema`, `extraConfig`                                                                                                |
+| `getOperation`      | GET one by filters         | `bodySchema`, `querySchema` | `table`, `setParams`, `relations`, `jsonArrayFields`, `byCreator`, `onSuccess`, `onError`, `summary`, `description`, `tags`  |
+| `getListOperation`  | GET paginated list         | `bodySchema`, `querySchema` | `table`, `setParams`, `relations`, `jsonArrayFields`, `onSuccess`, `onError`, `summary`, `description`, `tags`               |
+| `postOperation`     | POST create                | `bodySchema`                | `table`, `contentType`, `parseBody`, `outputBodySchema`, `setBody`, `onSuccess`, `onError`, `summary`, `description`, `tags` |
+| `putOperation`      | PUT update                 | `bodySchema`                | `table`, `outputBodySchema`, `setBody`, `byCreator`, `onSuccess`, `onError`, `summary`, `description`, `tags`                |
+| `deleteOperation`   | DELETE                     | —                           | `table`, `byCreator`, `onSuccess`, `onError`, `summary`, `description`, `tags`                                               |
 
 `tags` can be passed manually to override the default OpenAPI tag inferred from `table`.
+
+`summary` and `description` are forwarded into the OpenAPI operation object.
 
 `postOperation` defaults to `contentType: "application/json"`. Pass `contentType: "multipart/form-data"` to read `await req.formData()` as body, or pass both a custom `contentType` and `parseBody(req)` for custom payload parsing.
 

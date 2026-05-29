@@ -32,6 +32,7 @@ export interface PostOperationOptions<
 > {
   bodySchema: IB;
   contentType?: string;
+  description?: string;
   outputBodySchema?: OB;
   parseBody?(req: NextRequest): Promise<Record<string, unknown>>;
   setBody?(req: NextRequest): Promise<Partial<z.infer<IB>>>;
@@ -59,6 +60,7 @@ export const createPostOperation =
   <IB extends ZodSchema, OB extends ZodSchema, TTable extends PgTable>({
     bodySchema,
     contentType = "application/json",
+    description,
     outputBodySchema,
     parseBody,
     setBody,
@@ -71,6 +73,7 @@ export const createPostOperation =
     routeOperation({
       method: "POST",
       openApiOperation: {
+        description,
         summary,
         tags: tags ?? (table ? [getTableName(table)] : []),
       },

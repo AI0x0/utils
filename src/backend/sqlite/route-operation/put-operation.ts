@@ -17,6 +17,7 @@ export interface PutOperationOptions<
   TTable extends SQLiteTable,
 > {
   bodySchema: IB;
+  description?: string;
   outputBodySchema?: OB;
   table?: TTable;
   summary?: string;
@@ -44,6 +45,7 @@ export const createPutOperation =
   }) =>
   <IB extends ZodSchema, OB extends ZodSchema, TTable extends BaseTable>({
     bodySchema,
+    description,
     outputBodySchema,
     table,
     summary,
@@ -56,6 +58,7 @@ export const createPutOperation =
     routeOperation({
       method: "PUT",
       openApiOperation: {
+        description,
         summary,
         tags: tags ?? (table ? [getTableName(table)] : []),
       },

@@ -22,7 +22,11 @@ declare module "next-rest-framework" {
 
   export const routeOperation: <M extends string>(opts: {
     method: M;
-    openApiOperation?: { summary?: string; tags?: string[] };
+    openApiOperation?: {
+      description?: string;
+      summary?: string;
+      tags?: string[];
+    };
   }) => RouteOperationBuilder<M>;
 
   export const rpcOperation: () => {

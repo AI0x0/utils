@@ -8,6 +8,7 @@ import { HttpError } from "@/backend/sqlite/errors";
 
 export interface DeleteOperationOptions<TTable extends BaseTable> {
   table?: TTable;
+  description?: string;
   summary?: string;
   tags?: string[];
   onSuccess?: (_payload: {
@@ -29,6 +30,7 @@ export const createDeleteOperation =
   }) =>
   <TTable extends BaseTable>({
     table,
+    description,
     summary,
     tags,
     onSuccess,
@@ -38,6 +40,7 @@ export const createDeleteOperation =
     routeOperation({
       method: "DELETE",
       openApiOperation: {
+        description,
         summary,
         tags: tags ?? (table ? [getTableName(table)] : []),
       },

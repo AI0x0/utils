@@ -29,6 +29,7 @@ export interface GetOperationOptions<
   onError?(
     error: Error,
   ): Promise<ReturnType<(typeof TypedNextResponse)["json"]> | undefined>;
+  description?: string;
   summary?: string;
   tags?: string[];
   table?: TTable;
@@ -47,6 +48,7 @@ export const createGetOperation =
     querySchema,
     bodySchema,
     table,
+    description,
     summary,
     tags,
     relations,
@@ -59,6 +61,7 @@ export const createGetOperation =
     routeOperation({
       method: "GET",
       openApiOperation: {
+        description,
         summary,
         tags: tags ?? (table ? [getTableName(table)] : []),
       },

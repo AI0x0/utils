@@ -24,6 +24,7 @@ export interface GetListOperationOptions<
     req: TypedNextRequest<"GET", "application/json", unknown, z.infer<Q>>,
   ): Promise<Record<string, unknown>>;
   byCreator?: boolean;
+  description?: string;
   summary?: string;
   tags?: string[];
   table?: TTable;
@@ -54,6 +55,7 @@ export const createGetListOperation =
     querySchema,
     bodySchema,
     table,
+    description,
     summary,
     tags,
     relations,
@@ -66,6 +68,7 @@ export const createGetListOperation =
     routeOperation({
       method: "GET",
       openApiOperation: {
+        description,
         summary,
         tags: tags ?? (table ? [getTableName(table)] : []),
       },
