@@ -1,2 +1,5 @@
+packages:
+  - "."
+
 overrides:
   next-rest-framework: github:mushan0x0/next-rest-framework#pkg
