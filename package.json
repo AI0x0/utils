@@ -1,6 +1,6 @@
 {
   "name": "@ai0x0/utils",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "AI0x0 utils",
   "keywords": [
     "ai0x0"
@@ -47,6 +47,7 @@
       "default": "./lib/backend/sqlite/schemas/index.js"
     },
     "./eslint-config": "./eslint-config/index.js",
+    "./eslint-config/*": "./eslint-config/*",
     "./eslint-rules": "./eslint-rules/index.js",
     "./eslint-rules/*": "./eslint-rules/*",
     "./es/*": "./es/*",
