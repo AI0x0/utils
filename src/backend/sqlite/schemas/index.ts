@@ -13,7 +13,9 @@ import {
   createUpdateSchema,
 } from "drizzle-zod";
 
-//============================基本字段============================//
+// =============================================================================
+// 基本字段 —— 每张表都注入的那几列
+// =============================================================================
 const timestamp = (name: string) => integer(name, { mode: "timestamp_ms" });
 
 const now = () => new Date();
@@ -66,7 +68,9 @@ export const BASIC_UPDATE_OMIT = {
   updatedAt: true,
 } as const;
 
-//============================列表查询字段============================//
+// =============================================================================
+// 列表查询字段
+// =============================================================================
 export const queryListSchema = <Incoming extends ZodObject>(schema: Incoming) =>
   z
     .object({
@@ -80,14 +84,18 @@ export const queryListSchema = <Incoming extends ZodObject>(schema: Incoming) =>
     })
     .merge(schema);
 
-//============================列表返回字段============================//
+// =============================================================================
+// 列表返回字段
+// =============================================================================
 export const listBodySchema = <T extends ZodType>(schema: T) =>
   z.object({
     total: z.number(),
     data: z.array(schema),
   });
 
-//============================创建一个sqlite表============================//
+// =============================================================================
+// 建表 —— 表 + 5 份 zod schema
+// =============================================================================
 /**
  * 基于 drizzle + drizzle-zod 快速生成带基础字段（id / 创建时间等）的
  * 表定义以及 select / insert / update / query / list zod schema。
@@ -97,7 +105,10 @@ export const createTableSchema: <
   TColumnsMap extends Record<string, SQLiteColumnBuilderBase>,
 >(_options: {
   name: TTableName;
+  /** 客户端能写的业务列。insert / update schema 只从这里推。 */
   columns: TColumnsMap;
+  /** 由服务端盖、绝不接受客户端传的业务列（归属、租户 id 这类）。语义与 pg 版一致，见那边的说明。 */
+  serverColumns?: Record<string, SQLiteColumnBuilderBase>;
   extraConfig?: (
     _self: BuildExtraConfigColumns<
       TTableName,
@@ -113,9 +124,12 @@ export const createTableSchema: <
   querySchema: any;
   queryListSchema: any;
   queryListSelectSchema: any;
-} = ({ name, columns, extraConfig }) => {
-  const mergedColumns = { ...basicFields, ...columns } as typeof basicFields &
-    Record<string, SQLiteColumnBuilderBase>;
+} = ({ name, columns, serverColumns, extraConfig }) => {
+  const mergedColumns = {
+    ...basicFields,
+    ...serverColumns,
+    ...columns,
+  } as typeof basicFields & Record<string, SQLiteColumnBuilderBase>;
 
   const table = sqliteTable(
     name,
@@ -124,6 +138,7 @@ export const createTableSchema: <
   ) as unknown as ReturnType<typeof sqliteTable>;
 
   const selectSchema = createSelectSchema(table);
+  // 只从 columns 推 —— basicFields 与 serverColumns 都由服务端写，不该出现在请求体里。
   const insertSchema = createInsertSchema(sqliteTable(name, columns));
   const updateSchema = createUpdateSchema(
     sqliteTable(name, { id: text("id"), ...columns }),

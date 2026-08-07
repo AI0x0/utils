@@ -68,7 +68,7 @@ export const getListOperation = createGetListOperation({ db, getSession });
 
 | Export              | Purpose                    | Required options                    | Notable optional options                                                                                         |
 | ------------------- | -------------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `createTableSchema` | pg `Table` + 5 zod schemas | `name`, `columns`                   | `refineSchema`, `extraConfig`                                                                                    |
+| `createTableSchema` | pg `Table` + 5 zod schemas | `name`, `columns`                   | `serverColumns`, `refineSchema`, `extraConfig`                                                                   |
 | `getOperation`      | GET one by filters         | `schemas.query`, `schemas.response` | `table`, `setParams`, `relations`, `jsonArrayFields`, `access.byCreator`, `handler`, `catch`, `openApiOperation` |
 | `getListOperation`  | GET paginated list         | `schemas.query`, `schemas.response` | `table`, `setParams`, `relations`, `jsonArrayFields`, `handler`, `catch`, `openApiOperation`                     |
 | `postOperation`     | POST create                | `schemas.body`                      | `table`, `contentType`, `parseBody`, `schemas.response`, `setBody`, `handler`, `catch`, `openApiOperation`       |
@@ -308,7 +308,8 @@ export const { GET } = route({
 
 ## Built-in Conventions
 
-- **Base fields** auto-added by `createTableSchema`: `id` (uuid, pk, default random) / `creatorId` / `editorId` / `accessedAt` / `createdAt` / `updatedAt`.
+- **Base fields** auto-added by `createTableSchema`: `id` (uuid, pk, default random) / `creatorId` / `editorId` / `accessedAt` / `createdAt` / `updatedAt`. They never appear in the insert/update schemas — the server writes them.
+- **Server-owned business columns** (`serverColumns: { ownerId: uuid("owner_id").notNull() }`): a second column bucket, alongside `columns`. Everything in it goes on the table and into `selectSchema` (you can read it), but **not** into `insertSchema` / `updateSchema` — exactly how the base fields already behave, just opened up to columns you declare yourself. Use it for anything carrying ownership (`ownerId`, `tenantId`): letting a client send that column is letting it choose whose row this is. Pair it with `access.scope.column` — that decides _which rows you see_, this decides _that you cannot write the column_. Which bucket a column sits in is the whole rule, so there is nothing to remember and nothing to forget; `insertSchema.omit(...)` per table would work too, but missing one table is not a compile error, it is a silent privilege escalation.
 - **Row-level scope** (`access`, on by default for every verb): the request may only see / touch rows whose scope column matches. Three knobs:
   - `byCreator?: boolean` — the old spelling, equivalent to `scope: { column: "creatorId", value: (s) => s.userId }`. Default `true`.
   - `scope?: { column?, value }` — pick the column (default `creatorId`) and derive the value from the session. Return an array for `IN (...)`. Use this when a row can belong to something other than one user (a team, a workspace).

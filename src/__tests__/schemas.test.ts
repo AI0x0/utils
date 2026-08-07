@@ -8,7 +8,7 @@ import {
   basicFields,
 } from "@/backend/schemas";
 import { z } from "zod";
-import { pgTable, text, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema, createUpdateSchema } from "drizzle-zod";
 
 describe("queryListSchema", () => {
@@ -138,6 +138,47 @@ describe("createTableSchema", () => {
       expect(result.data.current).toBe("1");
       expect(result.data.pageSize).toBe("10");
     }
+  });
+});
+
+describe("createTableSchema 的 serverColumns", () => {
+  const { table, selectSchema, insertSchema, updateSchema } = createTableSchema(
+    {
+      name: "docs",
+      columns: { title: text("title").notNull() },
+      serverColumns: {
+        // 承载归属，由服务端按会话盖 —— 客户端传它就等于自己挑这行算谁的。
+        ownerId: uuid("owner_id").notNull(),
+      },
+    },
+  );
+
+  it("表上仍然有这一列 —— 少的只是请求体", () => {
+    expect(table.ownerId).toBeDefined();
+  });
+
+  it("insertSchema 里没有它，且不给也能过", () => {
+    expect(insertSchema.safeParse({ title: "Hello" }).success).toBe(true);
+    expect("ownerId" in insertSchema.shape).toBe(false);
+  });
+
+  it("客户端硬传也进不来（被剥掉，不是报错）", () => {
+    const result = insertSchema.safeParse({
+      title: "Hello",
+      ownerId: "11111111-2222-4333-8444-555555555555",
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).not.toHaveProperty("ownerId");
+    }
+  });
+
+  it("updateSchema 里也没有 —— 换归属是转移，不是改个字段", () => {
+    expect("ownerId" in updateSchema.shape).toBe(false);
+  });
+
+  it("selectSchema 照常有它：读得到，只是写不进", () => {
+    expect("ownerId" in selectSchema.shape).toBe(true);
   });
 });
 

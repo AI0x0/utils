@@ -13,7 +13,9 @@ import {
   createUpdateSchema,
 } from "drizzle-zod";
 
-//============================基本字段============================//
+// =============================================================================
+// 基本字段 —— 每张表都注入的那几列
+// =============================================================================
 const timestamptz = (name: string) => timestamp(name, { withTimezone: true });
 
 const createdAt = () => timestamptz("created_at").notNull().defaultNow();
@@ -64,7 +66,9 @@ export const BASIC_UPDATE_OMIT = {
   updatedAt: true,
 } as const;
 
-//============================列表查询字段============================//
+// =============================================================================
+// 列表查询字段
+// =============================================================================
 export const queryListSchema = <Incoming extends ZodObject>(schema: Incoming) =>
   z
     .object({
@@ -78,14 +82,18 @@ export const queryListSchema = <Incoming extends ZodObject>(schema: Incoming) =>
     })
     .merge(schema);
 
-//============================列表返回字段============================//
+// =============================================================================
+// 列表返回字段
+// =============================================================================
 export const listBodySchema = <T extends ZodType>(schema: T) =>
   z.object({
     total: z.number(),
     data: z.array(schema),
   });
 
-//============================创建一个pg表============================//
+// =============================================================================
+// 建表 —— 表 + 5 份 zod schema
+// =============================================================================
 /**
  * 基于 drizzle + drizzle-zod 快速生成带基础字段（id / 创建时间等）的
  * 表定义以及 select / insert / update / query / list zod schema。
@@ -93,31 +101,50 @@ export const listBodySchema = <T extends ZodType>(schema: T) =>
 export const createTableSchema = <
   TTableName extends string,
   TColumnsMap extends Record<string, PgColumnBuilderBase>,
+  TServerColumns extends Record<string, PgColumnBuilderBase> = {},
 >({
   name,
   columns,
+  serverColumns,
   extraConfig,
 }: {
-  name: TTableName;
+  /** 客户端能写的业务列。insert / update schema 只从这里推。 */
   columns: TColumnsMap;
+  name: TTableName;
+  /**
+   * 由服务端盖、**绝不接受客户端传**的业务列：承载归属的 `ownerId`（配合
+   * `access.scope.column` 用）、租户 id 这一类。
+   *
+   * 它们照常进表、照常出现在 `selectSchema` 里（读得到），只是**不进 insert / update
+   * schema** —— 与 basicFields 里的 creatorId / editorId 完全一样的待遇，只不过那几列是库
+   * 自己加的，而归属列是业务自己声明的，库没有依据认出它特殊，所以要你放进这个桶。
+   *
+   * 为什么值得单独一个参数：让客户端能传归属列，等于让它自己挑这行数据算谁的，那就是越权
+   * 本身。而「每张表都记得手动把它 omit 掉」是靠不住的 —— 漏掉一张不会编译报错，只会静默
+   * 放行。列写在哪个桶里，能不能被客户端写就定了，没有可漏的余地。
+   */
+  serverColumns?: TServerColumns;
   extraConfig?: (
     self: BuildExtraConfigColumns<
       TTableName,
-      typeof basicFields & TColumnsMap,
+      typeof basicFields & TServerColumns & TColumnsMap,
       "pg"
     >,
   ) => PgTableExtraConfigValue[];
 }) => {
-  const mergedColumns = { ...basicFields, ...columns } as typeof basicFields &
-    TColumnsMap;
+  const mergedColumns = {
+    ...basicFields,
+    ...serverColumns,
+    ...columns,
+  } as typeof basicFields & TServerColumns & TColumnsMap;
 
-  const table = pgTable<TTableName, typeof basicFields & TColumnsMap>(
-    name,
-    mergedColumns,
-    extraConfig,
-  );
+  const table = pgTable<
+    TTableName,
+    typeof basicFields & TServerColumns & TColumnsMap
+  >(name, mergedColumns, extraConfig);
 
   const selectSchema = createSelectSchema(table);
+  // 只从 columns 推 —— basicFields 与 serverColumns 都由服务端写，不该出现在请求体里。
   const insertSchema = createInsertSchema(pgTable(name, columns));
   const updateSchema = createUpdateSchema(
     pgTable(name, { id: uuid("id"), ...columns }),
