@@ -27,7 +27,7 @@ export {
   createTableSchema,
   queryListSchema,
   listBodySchema,
-} from "@ai0x0/utils/lib/backend/schemas";
+} from "@ai0x0/utils/backend/schemas";
 ```
 
 ```ts
@@ -38,7 +38,7 @@ export {
   createGetListAction,
   createPostAction,
   createPutAction,
-} from "@ai0x0/utils/lib/backend/actions";
+} from "@ai0x0/utils/backend";
 ```
 
 ```ts
@@ -49,7 +49,7 @@ import {
   createPostOperation,
   createDeleteOperation,
   createGetListOperation,
-} from "@ai0x0/utils/lib/backend";
+} from "@ai0x0/utils/backend";
 import { db } from "@backend/db";
 import getSession from "@backend/utils/get-session";
 
@@ -309,8 +309,13 @@ export const { GET } = route({
 ## Built-in Conventions
 
 - **Base fields** auto-added by `createTableSchema`: `id` (uuid, pk, default random) / `creatorId` / `editorId` / `accessedAt` / `createdAt` / `updatedAt`.
-- **Ownership check**: with `access: { byCreator: true }` (default on PUT/DELETE/GET), PUT/DELETE pre-fetch the row filtered by `creatorId = session.userId` and throw `"未找到…对象，或没有权限"` if missing. Set `access: { byCreator: false }` to skip (e.g. admin endpoints).
-- **Auto injection**: POST writes `creatorId = session.userId`; PUT writes `editorId = session.userId`; GET/GET_LIST append `creatorId = session.userId` to the filter when `access.byCreator` is on.
+- **Row-level scope** (`access`, on by default for every verb): the request may only see / touch rows whose scope column matches. Three knobs:
+  - `byCreator?: boolean` — the old spelling, equivalent to `scope: { column: "creatorId", value: (s) => s.userId }`. Default `true`.
+  - `scope?: { column?, value }` — pick the column (default `creatorId`) and derive the value from the session. Return an array for `IN (...)`. Use this when a row can belong to something other than one user (a team, a workspace).
+  - `can?: ({ session, method }) => boolean | { status?, message? }` — the _action_ gate, as opposed to the _row_ filter. Read-only roles belong here, in one place, not spread across every route.
+- **Fail closed**: if the session is missing → 401; if `scope.value` returns empty → 403. A scope that cannot be resolved is **never** downgraded to "no filter". PUT/DELETE put the scope straight into the `UPDATE`/`DELETE` `where` (one statement, no read-then-write window) and return 404 when it affects zero rows — "does not exist" and "not yours" are deliberately indistinguishable, otherwise the endpoint becomes an existence oracle.
+- **Auto injection**: POST stamps the scope column with the scope value (by default that is `creatorId = session.userId`); PUT writes `editorId = session.userId`; GET/GET_LIST apply the scope as a mandatory `where`.
+- **Session shape** is yours: `getSession` is generic, so resolve "who + which space + what role" once and let `scope.value` / `can` read the same object instead of each querying again.
 - **Date coercion**: any body field ending in `At` is passed through `dayjs(value).toDate()` before write — accept ISO strings from clients.
 - **List filtering** (all querystring values are strings):
   - `key=a,b,c` → `IN (...)` when key ends with `Id`; otherwise `OR ILIKE %a% OR ILIKE %b%`
@@ -331,6 +336,26 @@ export const { GET } = route({
 - Swallowing errors: an unhandled throw in a handler propagates to next-rest-framework as a 500. Provide `catch` for any operation exposed to untrusted clients.
 - For non-CRUD behavior (middleware chains, streaming, custom `TypedNextResponse` unions, RPC) stop using these factories and switch to the `create-next-rest-framework-api` skill.
 
+## Using the actions directly
+
+`createGetAction` / `createGetListAction` / `createPutAction` / `createDeleteAction` and `getListQuery` all take the scope as a **required** argument — pass `NO_SCOPE` to opt out explicitly:
+
+```ts
+import { NO_SCOPE } from "@ai0x0/utils/backend";
+
+await createGetListAction({ bodySchema, db, table })(params, {
+  scope: NO_SCOPE,
+});
+await createDeleteAction({ db, table })(
+  { id },
+  {
+    scope: { column: "ownerId", value: currentTeamId },
+  },
+);
+```
+
+It is required rather than optional on purpose: a forgotten scope is a compile error, not a silent full-table query.
+
 ## Escape Hatches
 
 - Extra server-side filters — `setParams(req) => Promise<Record<string, unknown>>` on GET/GET_LIST; returned keys are merged into the filter.
@@ -341,19 +366,18 @@ export const { GET } = route({
 ## Imports
 
 ```
-@ai0x0/utils/lib/backend                   // actions + route-operation + schemas (CJS, used by Next.js server bundle)
-@ai0x0/utils/lib/backend/actions
-@ai0x0/utils/lib/backend/route-operation
-@ai0x0/utils/lib/backend/schemas
+@ai0x0/utils/backend                       // actions + route-operation + schemas + scope
+@ai0x0/utils/backend/schemas               // createTableSchema / queryListSchema
+@ai0x0/utils/backend/sqlite                // same surface, SQLite flavour
 ```
 
-ESM consumers can substitute `/es/backend/...` instead of `/lib/backend/...` when Next.js resolves the `exports` map that way; prefer `/lib/backend` in Next.js projects because the server bundle is CommonJS.
+The `exports` map picks CJS or ESM per consumer; you do not choose. **Do not write `@ai0x0/utils/es/backend/...` or `/lib/backend/...`** — those name build artifacts and hard-code an internal detail into every import. The `./es/*` and `./lib/*` wildcards stay only so existing callers keep working.
 
 ## Done Criteria
 
 - Route files contain zero hand-written `{ db, getSession }` wiring; all operations come from `@backend/utils/route-operation`.
 - Each domain has a `table.ts` (columns + `createTableSchema`) and an `index.ts` (five zod schemas + re-exports).
 - Every list endpoint accepts `current / pageSize / orderBy / orderDir / *AtFrom / *AtTo` and — where applicable — `jsonArrayFields` is declared.
-- `access.byCreator` is explicitly set when the endpoint is admin-facing or otherwise crosses ownership boundaries.
+- `access` is explicitly set when the endpoint is admin-facing or otherwise crosses ownership boundaries — `byCreator: false` for genuinely public data, `scope` when ownership is not "one user", `can` for read-only roles.
 - Non-CRUD endpoints are implemented via raw `routeOperation` + action helpers, not by forcing a CRUD factory.
 - `next-rest-framework validate` / `generate` (from the partner skill) still pass — the factory values are plain `RouteOperationDefinition` and participate in OpenAPI generation.

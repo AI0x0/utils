@@ -19,17 +19,17 @@ See [SKILL.md](./SKILL.md) for detailed workflow, setup, and escape hatches.
 
 ## SQLite Backend (`src/backend/sqlite/`)
 
-Projects that use a local SQLite database can import the same CRUD factory surface from `@ai0x0/utils/es/backend/sqlite`.
+Projects that use a local SQLite database can import the same CRUD factory surface from `@ai0x0/utils/backend/sqlite`.
 
 ```ts
 import {
   createTableSchema,
   queryListSchema,
-} from "@ai0x0/utils/es/backend/sqlite/schemas/index.js";
+} from "@ai0x0/utils/backend/sqlite/schemas";
 import {
   createGetOperation,
   createPostOperation,
-} from "@ai0x0/utils/es/backend/sqlite/index.js";
+} from "@ai0x0/utils/backend/sqlite";
 ```
 
 The SQLite helpers mirror the PostgreSQL helpers, but use `drizzle-orm/sqlite-core`, SQLite `LIKE`, and `json_each(...)` for JSON-array filtering.
