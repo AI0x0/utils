@@ -62,6 +62,18 @@ export interface AccessOptions<TSession = DefaultSession> {
     session: TSession;
     method: HttpMethod;
   }) => boolean | AccessDenial | Promise<boolean | AccessDenial>;
+  /**
+   * 新建（POST）时额外要盖在行上的列。归属列由 `scope` 盖，这里管别的服务端字段 ——
+   * 最典型的就是「谁建的」：归属列一旦不是 `creatorId`（比如换成 `ownerId`），作者就没人写了，
+   * 而 `setBody` 只能返回请求体 schema 里有的字段，`creatorId` 不在里面。
+   *
+   * 与归属戳同一条不变量：**最后展开，客户端覆盖不了**。所以这里能安全地盖任何服务端字段，
+   * 不必担心请求体里塞一个同名键把它顶掉。
+   *
+   * 库不替业务猜要盖什么（哪张表有 creatorId、要不要记作者，都是业务的事），所以给的是钩子
+   * 而不是默认行为。
+   */
+  stamp?: (session: TSession) => Record<string, unknown>;
 }
 
 const DEFAULT_SCOPE_COLUMN = "creatorId";
@@ -105,7 +117,11 @@ export async function resolveAccess<TSession>({
 }): Promise<{ scope: ScopeArg; session: TSession | undefined }> {
   const wantsScope = Boolean(access?.scope) || (access?.byCreator ?? true);
   // 不需要就不取：关掉隔离的路由（多半是公开端点）不该为此白付一次会话读取。
-  const session = wantsScope || access?.can ? await loadSession() : undefined;
+  // stamp 也要会话 —— 它是拿会话算「盖哪些列」的。
+  const session =
+    wantsScope || access?.can || access?.stamp
+      ? await loadSession()
+      : undefined;
 
   if (access?.can) {
     if (!session) {

@@ -108,7 +108,7 @@ export function createPostOperationFactory<TTable>({
         ])
         .handler(async (req) => {
           try {
-            const { scope } = await resolveAccess({
+            const { scope, session } = await resolveAccess({
               access,
               loadSession: sessionLoader(getSession, req),
               method: "POST",
@@ -117,7 +117,10 @@ export function createPostOperationFactory<TTable>({
             const extraBody = (await setBody?.(req)) || {};
             // 新建的行归属这次请求的作用域。默认情形下作用域就是 creatorId = 当前用户，
             // 换了归属列（比如 ownerId）时它自动跟着换。
-            // 想再记一个「谁建的」用 setBody 补 —— 那是调用方的语义，库不猜。
+            //
+            // 别的服务端字段（最典型的是「谁建的」）由 access.stamp 盖：归属列一旦不是
+            // creatorId，作者就没人写了，而 setBody 只能返回请求体 schema 里有的字段。
+            // 归属戳排在它后面 —— 两者撞同一个键时以归属为准，那是更强的那条不变量。
             //
             // **归属戳必须最后展开**，这是一条安全不变量，别为了「让调用方能覆盖」而调顺序：
             // `.input({ body })` 只校验、**不替换**请求体（next-rest-framework 交给 handler 的
@@ -125,7 +128,14 @@ export function createPostOperationFactory<TTable>({
             // schema 过滤。所以只要 body 排在戳后面，客户端在 JSON 里塞一个 `ownerId` /
             // `creatorId` 就能把行写到别人名下 —— 调用方把该列从 schema 里 omit 掉也拦不住。
             // 见 __tests__/route-operation-scope-stamp。
-            const params = { ...body, ...extraBody, ...scopeStamp(scope) };
+            const stamped =
+              session === undefined ? {} : (access?.stamp?.(session) ?? {});
+            const params = {
+              ...body,
+              ...extraBody,
+              ...stamped,
+              ...scopeStamp(scope),
+            };
             const raw =
               table && db
                 ? (

@@ -1,5 +1,4 @@
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
-import { NextRequest } from "next/server";
 import { ZodSchema } from "zod";
 import { createGetListAction } from "../actions/create-get-list-action";
 import { BaseTable, GetListRelations } from "../types";
@@ -8,12 +7,14 @@ import {
   createGetListOperationFactory,
   type GetListOperationOptions as CoreGetListOperationOptions,
 } from "./operation-core";
+import type { DefaultSession, SessionGetter } from "./operation-common";
 
 export type GetListOperationOptions<
   T extends ZodSchema,
   Q extends ZodSchema,
   TTable extends BaseTable,
-> = CoreGetListOperationOptions<T, Q, TTable, GetListRelations>;
+  TSession = DefaultSession,
+> = CoreGetListOperationOptions<T, Q, TTable, GetListRelations, TSession>;
 
 const createOperation = createGetListOperationFactory<
   BaseTable,
@@ -23,10 +24,10 @@ const createOperation = createGetListOperationFactory<
   getTableName,
 });
 
-export const createGetListOperation = ({
+export const createGetListOperation = <TSession = DefaultSession>({
   db,
   getSession,
 }: {
   db?: NodePgDatabase<Record<string, unknown>>;
-  getSession(req: NextRequest): Promise<{ userId?: string } | undefined>;
-}) => createOperation({ db, getSession });
+  getSession: SessionGetter<TSession>;
+}) => createOperation<TSession>({ db, getSession });

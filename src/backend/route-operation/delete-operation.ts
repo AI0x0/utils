@@ -1,5 +1,4 @@
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
-import { NextRequest } from "next/server";
 import { ZodSchema } from "zod";
 import { createDeleteAction } from "../actions/create-delete-action";
 import { BaseTable } from "../types";
@@ -8,21 +7,23 @@ import {
   createDeleteOperationFactory,
   type DeleteOperationOptions as CoreDeleteOperationOptions,
 } from "./operation-core";
+import type { DefaultSession, SessionGetter } from "./operation-common";
 
 export type DeleteOperationOptions<
   TTable extends BaseTable,
   B extends ZodSchema,
-> = CoreDeleteOperationOptions<TTable, B>;
+  TSession = DefaultSession,
+> = CoreDeleteOperationOptions<TTable, B, TSession>;
 
 const createOperation = createDeleteOperationFactory<BaseTable>({
   createAction: createDeleteAction as any,
   getTableName,
 });
 
-export const createDeleteOperation = ({
+export const createDeleteOperation = <TSession = DefaultSession>({
   db,
   getSession,
 }: {
   db?: NodePgDatabase<Record<string, unknown>>;
-  getSession(req: NextRequest): Promise<{ userId?: string } | undefined>;
-}) => createOperation({ db, getSession });
+  getSession: SessionGetter<TSession>;
+}) => createOperation<TSession>({ db, getSession });

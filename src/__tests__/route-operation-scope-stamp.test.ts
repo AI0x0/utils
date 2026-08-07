@@ -122,3 +122,66 @@ describe("PUT 的 editorId", () => {
     expect(res.data.editorId).toBe("user-1");
   });
 });
+
+describe("access.stamp —— 归属列不是 creatorId 时，作者由它来盖", () => {
+  const getSession = vi.fn(async () => ({
+    ownerId: "team-mine",
+    userId: "user-1",
+  }));
+
+  it("盖上作者列，且请求体伪造不了它", async () => {
+    const { createPostOperation } =
+      await import("@/backend/route-operation/post-operation");
+    const operation = createPostOperation({ getSession })({
+      access: {
+        scope: { column: "ownerId", value: (session: any) => session.ownerId },
+        stamp: (session: any) => ({ creatorId: session.userId }),
+      },
+      schemas: { body: z.object({ name: z.string() }) },
+    }) as unknown as Operation;
+
+    // 手写请求：归属和作者两列一起伪造。
+    const res = await operation._handler(
+      makeJsonReq({
+        creatorId: "user-victim",
+        name: "画布",
+        ownerId: "team-victim",
+      }),
+    );
+
+    expect(res.data.ownerId).toBe("team-mine");
+    expect(res.data.creatorId).toBe("user-1");
+  });
+
+  it("与归属戳撞同一个键时以归属为准 —— 那是更强的那条不变量", async () => {
+    const { createPostOperation } =
+      await import("@/backend/route-operation/post-operation");
+    const operation = createPostOperation({ getSession })({
+      access: {
+        scope: { column: "ownerId", value: (session: any) => session.ownerId },
+        stamp: () => ({ ownerId: "team-somewhere-else" }),
+      },
+      schemas: { body: z.object({ name: z.string() }) },
+    }) as unknown as Operation;
+
+    const res = await operation._handler(makeJsonReq({ name: "画布" }));
+
+    expect(res.data.ownerId).toBe("team-mine");
+  });
+
+  it("只给 stamp、关掉作用域时照样拿得到会话", async () => {
+    const { createPostOperation } =
+      await import("@/backend/route-operation/post-operation");
+    const operation = createPostOperation({ getSession })({
+      access: {
+        byCreator: false,
+        stamp: (session: any) => ({ creatorId: session.userId }),
+      },
+      schemas: { body: z.object({ name: z.string() }) },
+    }) as unknown as Operation;
+
+    const res = await operation._handler(makeJsonReq({ name: "画布" }));
+
+    expect(res.data.creatorId).toBe("user-1");
+  });
+});
