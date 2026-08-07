@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { pgTable, text } from "drizzle-orm/pg-core";
 import { basicFields } from "@/backend/schemas";
 import { getListQuery } from "@/backend/actions/get-list-query";
+import { NO_SCOPE } from "@/backend/scope";
 
 const table = pgTable("posts", {
   ...basicFields,
@@ -28,6 +29,7 @@ describe("getListQuery 分支覆盖", () => {
     const db = makeDb();
     expect(() =>
       getListQuery({
+        scope: NO_SCOPE,
         db,
         fields: { id: table.id },
         params: { id: "abc-123" },
@@ -40,6 +42,7 @@ describe("getListQuery 分支覆盖", () => {
     const db = makeDb();
     expect(() =>
       getListQuery({
+        scope: NO_SCOPE,
         db,
         fields: { title: table.title },
         params: { title: "hello" },
@@ -55,6 +58,7 @@ describe("getListQuery 分支覆盖", () => {
     const db = makeDb();
     expect(() =>
       getListQuery({
+        scope: NO_SCOPE,
         db,
         fields: { id: table.id },
         params: { id: "id-1,id-2" },
@@ -67,6 +71,7 @@ describe("getListQuery 分支覆盖", () => {
     const db = makeDb();
     expect(() =>
       getListQuery({
+        scope: NO_SCOPE,
         db,
         fields: { title: table.title },
         params: { title: "foo,bar" },
@@ -79,6 +84,7 @@ describe("getListQuery 分支覆盖", () => {
     const db = makeDb();
     expect(() =>
       getListQuery({
+        scope: NO_SCOPE,
         db,
         fields: { status: table.status },
         params: { status: "active" },
@@ -92,6 +98,7 @@ describe("getListQuery 分支覆盖", () => {
     const db = makeDb();
     expect(() =>
       getListQuery({
+        scope: NO_SCOPE,
         db,
         fields: { status: table.status },
         params: { status: "active,draft" },
@@ -105,6 +112,7 @@ describe("getListQuery 分支覆盖", () => {
     const db = makeDb();
     expect(() =>
       getListQuery({
+        scope: NO_SCOPE,
         db,
         fields: {},
         params: { createdAtFrom: "2024-01-01" },
@@ -117,6 +125,7 @@ describe("getListQuery 分支覆盖", () => {
     const db = makeDb();
     expect(() =>
       getListQuery({
+        scope: NO_SCOPE,
         db,
         fields: {},
         params: { createdAtTo: "2024-12-31" },
@@ -129,6 +138,7 @@ describe("getListQuery 分支覆盖", () => {
     const db = makeDb();
     expect(() =>
       getListQuery({
+        scope: NO_SCOPE,
         db,
         fields: { status: table.status },
         params: { status: 1 as any },
@@ -141,6 +151,7 @@ describe("getListQuery 分支覆盖", () => {
     const db = makeDb();
     expect(() =>
       getListQuery({
+        scope: NO_SCOPE,
         db,
         fields: {},
         params: { orderBy: "createdAt", orderDir: "asc" },
@@ -152,7 +163,13 @@ describe("getListQuery 分支覆盖", () => {
   it("值为空时跳过条件", () => {
     const db = makeDb();
     expect(() =>
-      getListQuery({ db, fields: {}, params: { title: "" }, table }),
+      getListQuery({
+        db,
+        fields: {},
+        params: { title: "" },
+        scope: NO_SCOPE,
+        table,
+      }),
     ).not.toThrow();
   });
 
@@ -160,6 +177,7 @@ describe("getListQuery 分支覆盖", () => {
     const db = makeDb();
     expect(() =>
       getListQuery({
+        scope: NO_SCOPE,
         db,
         fields: { title: table.title },
         params: { title: " , " },

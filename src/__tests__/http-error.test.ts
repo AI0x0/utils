@@ -96,7 +96,9 @@ describe("HttpError 返回正确状态码", () => {
     );
     expect(res.status).toBe(404);
     expect(res.data.message).toBe("未找到删除对象，或没有权限");
-    expect(db.delete).not.toHaveBeenCalled();
+    // 归属条件现在写进 DELETE 的 where，所以语句是**发出去**的，只是影响 0 行。
+    // 从前是「先 select 验权、再无条件 delete」——那多一次往返，而且两步之间归属可能已经变了。
+    expect(db.delete).toHaveBeenCalled();
   });
 
   it("PUT 未找到对象或无权限时返回 404", async () => {
@@ -114,7 +116,8 @@ describe("HttpError 返回正确状态码", () => {
     );
     expect(res.status).toBe(404);
     expect(res.data.message).toBe("未找到编辑对象，或没有权限");
-    expect(db.update).not.toHaveBeenCalled();
+    // 同 DELETE：一条 UPDATE 带着归属条件，影响 0 行即 404。
+    expect(db.update).toHaveBeenCalled();
   });
 
   it("DELETE catch 优先于 HttpError 默认处理", async () => {

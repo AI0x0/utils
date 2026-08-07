@@ -99,12 +99,13 @@ describe("createPostAction", () => {
 
 // ───── createDeleteAction ─────
 describe("createDeleteAction", () => {
-  it("不带 creatorId 时直接删除", async () => {
+  it("NO_SCOPE 时按 id 直接删除", async () => {
     const { createDeleteAction } =
       await import("@/backend/actions/create-delete-action");
+    const { NO_SCOPE } = await import("@/backend/scope");
     const db = makeDb();
     const action = createDeleteAction({ table: testTable, db });
-    const result = await action({ id: "id-1" });
+    const result = await action({ id: "id-1" }, { scope: NO_SCOPE });
     expect(db.delete).toHaveBeenCalledWith(testTable);
     expect(result).toEqual([{ id: "id-1", name: "foo" }]);
   });
@@ -112,7 +113,7 @@ describe("createDeleteAction", () => {
 
 // ───── createPutAction ─────
 describe("createPutAction", () => {
-  it("byCreator=false 时直接更新", async () => {
+  it("NO_SCOPE 时直接更新", async () => {
     const { createPutAction } =
       await import("@/backend/actions/create-put-action");
     const db = makeDb();
@@ -121,18 +122,18 @@ describe("createPutAction", () => {
       db,
       table: testTable,
     });
+    const { NO_SCOPE } = await import("@/backend/scope");
     const result = await action(
       { id: "id-1", name: "updated" },
-      { byCreator: false },
+      { scope: NO_SCOPE },
     );
     expect(db.update).toHaveBeenCalledWith(testTable);
     expect(result).toEqual({ id: "id-1", name: "foo" });
   });
 
-  it("byCreator=true 且 editorId 与 creatorId 匹配时更新成功", async () => {
+  it("带作用域时归属条件写进 UPDATE 的 where，不再先查后改", async () => {
     const { createPutAction } =
       await import("@/backend/actions/create-put-action");
-    // 两次 select: 第一次验权查到记录，第二次是 update 后的 returning
     const db = makeDb([{ id: "id-1", name: "foo", creatorId: "user-1" }]);
     const action = createPutAction({
       bodySchema: z.object({ id: z.string(), name: z.string() }),
@@ -141,9 +142,11 @@ describe("createPutAction", () => {
     });
     const result = await action(
       { id: "id-1", name: "updated", editorId: "user-1" },
-      { byCreator: true },
+      { scope: { column: "creatorId", value: "user-1" } },
     );
     expect(result).toBeDefined();
+    // 只有 update 那一条语句，没有额外的验权 select
+    expect(db.select).not.toHaveBeenCalled();
   });
 });
 
@@ -154,8 +157,9 @@ describe("createGetAction", () => {
       await import("@/backend/actions/create-get-action");
     const db = makeDb([{ id: "id-1", name: "foo" }]);
     const bodySchema = z.object({ id: z.string(), name: z.string() });
+    const { NO_SCOPE } = await import("@/backend/scope");
     const action = createGetAction({ bodySchema, db, table: testTable });
-    const result = await action({ id: "id-1" });
+    const result = await action({ id: "id-1" }, { scope: NO_SCOPE });
     expect(result).toEqual({ id: "id-1", name: "foo" });
   });
 
@@ -164,8 +168,9 @@ describe("createGetAction", () => {
       await import("@/backend/actions/create-get-action");
     const db = makeDb([]);
     const bodySchema = z.object({ id: z.string(), name: z.string() });
+    const { NO_SCOPE } = await import("@/backend/scope");
     const action = createGetAction({ bodySchema, db, table: testTable });
-    const result = await action({ id: "not-exist" });
+    const result = await action({ id: "not-exist" }, { scope: NO_SCOPE });
     expect(result).toBeUndefined();
   });
 });
@@ -177,8 +182,9 @@ describe("createGetListAction", () => {
       await import("@/backend/actions/create-get-list-action");
     const db = makeDb([{ id: "id-1", name: "foo" }], "1");
     const bodySchema = z.object({ id: z.string(), name: z.string() });
+    const { NO_SCOPE } = await import("@/backend/scope");
     const action = createGetListAction({ bodySchema, db, table: testTable });
-    const result = await action({});
+    const result = await action({}, { scope: NO_SCOPE });
     expect(result).toMatchObject({
       data: expect.any(Array),
       total: expect.any(Number),
@@ -190,8 +196,9 @@ describe("createGetListAction", () => {
       await import("@/backend/actions/create-get-list-action");
     const db = makeDb([{ id: "id-1", name: "foo" }], "5");
     const bodySchema = z.object({ id: z.string(), name: z.string() });
+    const { NO_SCOPE } = await import("@/backend/scope");
     const action = createGetListAction({ bodySchema, db, table: testTable });
-    const result = await action({});
+    const result = await action({}, { scope: NO_SCOPE });
     expect(result.total).toBe(5);
   });
 });

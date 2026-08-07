@@ -307,7 +307,8 @@ describe("createGetListOperation", () => {
     expect(db.select).not.toHaveBeenCalled();
     expect(handler).toHaveBeenCalledWith({
       data: { data: [], total: 0 },
-      params: { creatorId: "user-1" },
+      // 作用域不再混进 params：它单独传给 action，免得被「空值跳过筛选」那条规矩吃掉。
+      params: {},
       req: expect.any(Object),
     });
     expect(res.data.total).toBe(1);

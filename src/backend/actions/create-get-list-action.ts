@@ -4,6 +4,7 @@ import { SelectedFields } from "drizzle-orm/pg-core/query-builders/select.types"
 import { getListQuery } from "@/backend/actions/get-list-query";
 import { getListData } from "@/backend/actions/get-list-data";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
+import { ScopeArg } from "@/backend/scope";
 
 export function createGetListAction<
   T extends ZodSchema,
@@ -21,16 +22,19 @@ export function createGetListAction<
   relations?: GetListRelations;
   table: TTable;
 }) {
-  return async (params: Partial<z.infer<T>> & Record<string, unknown>) => {
+  return async (
+    params: Partial<z.infer<T>> & Record<string, unknown>,
+    // 作用域必填，不隔离就显式 NO_SCOPE。理由见 backend/scope.ts 第 2 条。
+    { scope }: { scope: ScopeArg },
+  ) => {
     const { current, pageSize, ...other } = params as Record<
       string,
       unknown
     > & { current?: number; pageSize?: number };
     const fields: SelectedFields = {};
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
     // @ts-ignore
     for (const key of Object.keys(bodySchema.shape)) {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       const field = table[key];
       if (field) {
@@ -43,6 +47,7 @@ export function createGetListAction<
       jsonArrayFields,
       params: other,
       relations,
+      scope,
       table,
     });
 

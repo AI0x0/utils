@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { getListQuery } from "@/backend/actions/get-list-query";
 import { pgTable, text } from "drizzle-orm/pg-core";
 import { basicFields } from "@/backend/schemas";
+import { NO_SCOPE } from "@/backend/scope";
 
 // 创建测试用表（含 basicFields 所需字段）
 const testTable = pgTable("test_items", {
@@ -33,6 +34,7 @@ describe("getListQuery", () => {
     const fields = { id: testTable.id, title: testTable.title };
 
     const { query, countQuery } = getListQuery({
+      scope: NO_SCOPE,
       db,
       fields,
       params: {},
@@ -47,7 +49,13 @@ describe("getListQuery", () => {
 
   it("分页参数默认 page=1 pageSize=10", () => {
     const { db, chain } = makeMockDb();
-    getListQuery({ db, fields: {}, params: {}, table: testTable });
+    getListQuery({
+      db,
+      fields: {},
+      params: {},
+      scope: NO_SCOPE,
+      table: testTable,
+    });
     // offset = (page-1) * pageSize = 0
     expect(chain.offset).toHaveBeenCalledWith(0);
     expect(chain.limit).toHaveBeenCalledWith(10);
@@ -56,6 +64,7 @@ describe("getListQuery", () => {
   it("自定义分页参数", () => {
     const { db, chain } = makeMockDb();
     getListQuery({
+      scope: NO_SCOPE,
       db,
       fields: {},
       params: { page: 3, pageSize: 20 },
@@ -68,6 +77,7 @@ describe("getListQuery", () => {
   it("返回 query 和 countQuery", () => {
     const { db } = makeMockDb();
     const result = getListQuery({
+      scope: NO_SCOPE,
       db,
       fields: {},
       params: {},
@@ -81,6 +91,7 @@ describe("getListQuery", () => {
     const { db } = makeMockDb();
     expect(() =>
       getListQuery({
+        scope: NO_SCOPE,
         db,
         fields: {},
         params: { orderBy: "createdAt", orderDir: "asc" },

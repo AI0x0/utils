@@ -1,3 +1,4 @@
+import { ScopeArg } from "@/backend/scope";
 import { BaseTable, GetListRelations } from "@/backend/sqlite/types";
 import { SelectedFields } from "drizzle-orm/sqlite-core/query-builders/select.types";
 import { getListQuery } from "@/backend/sqlite/actions/get-list-query";
@@ -16,7 +17,11 @@ export function createGetListAction<TTable extends BaseTable>({
   relations?: GetListRelations;
   table: TTable;
 }) {
-  return async (params: Record<string, unknown>) => {
+  return async (
+    params: Record<string, unknown>,
+    // 必填，不隔离就显式 NO_SCOPE。
+    { scope }: { scope: ScopeArg },
+  ) => {
     const { current, pageSize, ...other } = params as Record<
       string,
       unknown
@@ -33,6 +38,7 @@ export function createGetListAction<TTable extends BaseTable>({
       fields,
       jsonArrayFields,
       params: other,
+      scope,
       relations,
       table,
     });

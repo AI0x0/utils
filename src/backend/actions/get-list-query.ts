@@ -16,6 +16,7 @@ import {
   SQL,
 } from "drizzle-orm";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
+import { ScopeArg, scopeCondition } from "@/backend/scope";
 
 export function getListQuery<
   TTable extends BaseTable,
@@ -26,11 +27,18 @@ export function getListQuery<
   jsonArrayFields,
   params,
   relations,
+  scope,
   table,
 }: {
   db: NodePgDatabase<Record<string, unknown>>;
   fields: TSelection;
   jsonArrayFields?: string[];
+  /**
+   * 行级作用域。**必填**，不想隔离就显式传 NO_SCOPE —— 写成可选的话，漏传就退化成查全表，
+   * 而那是静默的越权（见 scope.ts）。它不走下面 params 那条筛选通道，因为那条的规矩是
+   * 「空值跳过」，一个取不到值的作用域会让整条 where 消失。
+   */
+  scope: ScopeArg;
   params: {
     // 排序方向
     [field: string]: unknown;
@@ -173,7 +181,9 @@ export function getListQuery<
 
     // 处理过滤条件
     for (const [key, value] of Object.entries(filters)) {
-      if (!value) continue;
+      if (!value) {
+        continue;
+      }
 
       // 处理日期范围字段
       if (key.endsWith("AtFrom") || key.endsWith("AtTo")) {
@@ -184,7 +194,9 @@ export function getListQuery<
           relations,
         );
 
-        if (!targetColumn) continue;
+        if (!targetColumn) {
+          continue;
+        }
 
         if (key.endsWith("AtFrom")) {
           conditions.push(gte(targetColumn, new Date(value as string)));
@@ -200,7 +212,9 @@ export function getListQuery<
         table,
         relations,
       );
-      if (!targetColumn) continue;
+      if (!targetColumn) {
+        continue;
+      }
 
       addCondition(conditions, key, value, targetColumn);
     }
@@ -221,14 +235,17 @@ export function getListQuery<
   // 构建基础查询
   const baseQuery = buildBaseQuery(table, fields, relations);
 
-  // 构建条件
-  const conditions = buildConditions(filters, table, relations);
+  // 构建条件。**作用域先于筛选加进去**，且它不受 buildConditions 里「空值跳过」那条规矩管：
+  // 那条规矩对 `?name=` 这种空参数是对的，对归属则是灾难性的 —— 条件消失即全表可见。
+  const scopeSql = scopeCondition(table, scope);
+  const conditions = scopeSql ? [scopeSql] : [];
+  conditions.push(...buildConditions(filters, table, relations));
 
   // 构建主查询
   const query = baseQuery
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(buildOrderBy(table, orderBy, orderDir))
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
     // @ts-ignore
     .limit(pageSize)
     .offset((page - 1) * pageSize);

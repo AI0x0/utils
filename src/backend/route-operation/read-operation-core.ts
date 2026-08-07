@@ -11,7 +11,9 @@ import {
   type RouteOpenApiOperation,
 } from "./open-api-operation";
 import {
+  AccessOptions,
   ActionFactory,
+  DefaultSession,
   getDefaultTags,
   getReadParams,
   GetOperationParams,
@@ -19,6 +21,7 @@ import {
   RouteCatch,
   SessionGetter,
 } from "./operation-common";
+import { ScopeArg } from "@/backend/scope";
 
 // ==============================================================================
 // GET single operation
@@ -29,14 +32,13 @@ export interface GetOperationOptions<
   Q extends ZodSchema,
   TTable,
   TRelations,
+  TSession = DefaultSession,
 > {
   schemas: {
     query: Q;
     response: T;
   };
-  access?: {
-    byCreator?: boolean;
-  };
+  access?: AccessOptions<TSession>;
   jsonArrayFields?: string[];
   relations?: TRelations;
   setParams?: (
@@ -58,11 +60,20 @@ export function createGetOperationFactory<TTable, TRelations>({
 }: {
   createAction: ActionFactory<
     TTable,
-    (_params: Record<string, unknown>) => Promise<unknown | undefined>
+    (
+      _params: Record<string, unknown>,
+      _options: { scope: ScopeArg },
+    ) => Promise<unknown | undefined>
   >;
   getTableName(table: TTable): string;
 }) {
-  return ({ db, getSession }: { db?: unknown; getSession: SessionGetter }) =>
+  return <TSession = DefaultSession>({
+      db,
+      getSession,
+    }: {
+      db?: unknown;
+      getSession: SessionGetter<TSession>;
+    }) =>
     <T extends ZodSchema, Q extends ZodSchema>({
       schemas,
       access,
@@ -73,7 +84,7 @@ export function createGetOperationFactory<TTable, TRelations>({
       jsonArrayFields,
       handler,
       catch: catchHandler,
-    }: GetOperationOptions<T, Q, TTable, TRelations>) =>
+    }: GetOperationOptions<T, Q, TTable, TRelations, TSession>) =>
       routeOperation({
         method: "GET",
         openApiOperation: createOpenApiOperation({
@@ -95,7 +106,7 @@ export function createGetOperationFactory<TTable, TRelations>({
         ])
         .handler(async (req) => {
           try {
-            const mergedParams = await getReadParams({
+            const { params: mergedParams, scope } = await getReadParams({
               access,
               getSession,
               req,
@@ -110,7 +121,7 @@ export function createGetOperationFactory<TTable, TRelations>({
                     jsonArrayFields,
                     relations,
                     table,
-                  })(mergedParams)
+                  })(mergedParams, { scope })
                 : mergedParams;
             let result = (rawResult ?? ({} as z.infer<T>)) as z.infer<T>;
             if (handler) {
@@ -136,7 +147,11 @@ export interface GetListOperationOptions<
   Q extends ZodSchema,
   TTable,
   TRelations,
-> extends Omit<GetOperationOptions<T, Q, TTable, TRelations>, "handler"> {
+  TSession = DefaultSession,
+> extends Omit<
+  GetOperationOptions<T, Q, TTable, TRelations, TSession>,
+  "handler"
+> {
   handler?: <D extends T>(_payload: {
     params: GetOperationParams<Q>;
     data: {
@@ -156,14 +171,23 @@ export function createGetListOperationFactory<TTable, TRelations>({
 }: {
   createAction: ActionFactory<
     TTable,
-    (_params: Record<string, unknown>) => Promise<{
+    (
+      _params: Record<string, unknown>,
+      _options: { scope: ScopeArg },
+    ) => Promise<{
       data: unknown[];
       total: number;
     }>
   >;
   getTableName(table: TTable): string;
 }) {
-  return ({ db, getSession }: { db?: unknown; getSession: SessionGetter }) =>
+  return <TSession = DefaultSession>({
+      db,
+      getSession,
+    }: {
+      db?: unknown;
+      getSession: SessionGetter<TSession>;
+    }) =>
     <T extends ZodSchema, Q extends ZodSchema>({
       schemas,
       access,
@@ -174,7 +198,7 @@ export function createGetListOperationFactory<TTable, TRelations>({
       setParams,
       handler,
       catch: catchHandler,
-    }: GetListOperationOptions<T, Q, TTable, TRelations>) =>
+    }: GetListOperationOptions<T, Q, TTable, TRelations, TSession>) =>
       routeOperation({
         method: "GET",
         openApiOperation: createOpenApiOperation({
@@ -196,7 +220,7 @@ export function createGetListOperationFactory<TTable, TRelations>({
         ])
         .handler(async (req) => {
           try {
-            const mergedParams = await getReadParams({
+            const { params: mergedParams, scope } = await getReadParams({
               access,
               getSession,
               req,
@@ -211,7 +235,7 @@ export function createGetListOperationFactory<TTable, TRelations>({
                     jsonArrayFields,
                     relations,
                     table,
-                  })(mergedParams)
+                  })(mergedParams, { scope })
                 : { data: [], total: 0 };
             if (handler) {
               result = await handler({

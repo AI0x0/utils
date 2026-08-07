@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { createGetListAction } from "@/backend/sqlite/actions";
 import { createTableSchema } from "@/backend/sqlite/schemas";
+import { NO_SCOPE } from "@/backend/scope";
 
 const { table } = createTableSchema({
   name: "sqlite_action_items",
@@ -50,7 +51,10 @@ describe("sqlite createGetListAction", () => {
       table,
     });
 
-    const result = await action({ current: 1, pageSize: 10, name: "demo" });
+    const result = await action(
+      { current: 1, pageSize: 10, name: "demo" },
+      { scope: NO_SCOPE },
+    );
 
     expect(result).toEqual({
       data: [{ id: "id-1", name: "demo" }],

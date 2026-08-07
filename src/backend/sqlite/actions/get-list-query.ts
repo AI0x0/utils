@@ -1,3 +1,4 @@
+import { ScopeArg, scopeCondition } from "@/backend/scope";
 import { BaseTable, GetListRelations } from "@/backend/sqlite/types";
 import { SQLiteTable } from "drizzle-orm/sqlite-core";
 import { SelectedFields } from "drizzle-orm/sqlite-core/query-builders/select.types";
@@ -24,12 +25,15 @@ export function getListQuery<
   fields,
   jsonArrayFields,
   params,
+  scope,
   relations,
   table,
 }: {
   db: any;
   fields: TSelection;
   jsonArrayFields?: string[];
+  /** 必填。与 pg 那套同义，见 backend/scope.ts。 */
+  scope: ScopeArg;
   params: {
     // 排序方向
     [field: string]: unknown;
@@ -227,7 +231,10 @@ export function getListQuery<
   const baseQuery = buildBaseQuery(table, fields, relations);
 
   // 构建条件
-  const conditions = buildConditions(filters, table, relations);
+  // 作用域先加，且不受「空值跳过」那条规矩管（见 backend/scope.ts 第 1 条）。
+  const scopeSql = scopeCondition(table as never, scope);
+  const conditions = scopeSql ? [scopeSql] : [];
+  conditions.push(...buildConditions(filters, table, relations));
 
   // 构建主查询
   const query = baseQuery

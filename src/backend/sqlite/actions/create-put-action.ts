@@ -1,8 +1,7 @@
-import { z } from "zod";
 import { transformBody } from "./transform-body";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { BaseTable } from "@/backend/sqlite/types";
-import { createGetAction } from "@/backend/sqlite";
+import { NO_SCOPE, ScopeArg, scopeCondition } from "@/backend/scope";
 import { HttpError } from "@/backend/sqlite/errors";
 
 export function createPutAction<TTable extends BaseTable>({
@@ -15,33 +14,22 @@ export function createPutAction<TTable extends BaseTable>({
 }) {
   return async (
     body: Record<string, unknown>,
-    {
-      byCreator = true,
-    }: {
-      byCreator?: boolean;
-    } = {},
+    // 与 pg 那套逐字同义，说明见 backend/actions/create-put-action。
+    { scope }: { scope: ScopeArg },
   ): Promise<any> => {
-    if (byCreator) {
-      const data = await createGetAction({
-        db,
-        table,
-        bodySchema: z.object({
-          creatorId: z.string(),
-          id: z.string(),
-        }),
-      })({
-        creatorId: body.editorId as string | undefined,
-        id: body.id as string,
-      });
-      if (!data) {
-        throw new HttpError(404, "未找到编辑对象，或没有权限");
-      }
+    const id = body.id as string;
+    if (!id) {
+      throw new HttpError(400, "缺少 id");
     }
+    const guard = scopeCondition(table as never, scope);
     const [data] = await db
       .update(table)
       .set(transformBody(body))
-      .where(eq(table.id, body.id as string))
+      .where(guard ? and(eq(table.id, id), guard) : eq(table.id, id))
       .returning();
+    if (!data && scope !== NO_SCOPE) {
+      throw new HttpError(404, "未找到编辑对象，或没有权限");
+    }
     return data;
   };
 }

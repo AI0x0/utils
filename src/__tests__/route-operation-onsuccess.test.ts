@@ -141,7 +141,8 @@ describe("route operation handler payload", () => {
 
     expect(handler).toHaveBeenCalledWith({
       data: { data: [{ id: "id-1", name: "foo" }], total: 1 },
-      params: { creatorId: "user-1" },
+      // 作用域不再混进 params：它单独传给 action，免得被「空值跳过筛选」那条规矩吃掉。
+      params: {},
       req: expect.any(Object),
     });
     expect(res.data.total).toBe(999);
@@ -167,7 +168,8 @@ describe("route operation handler payload", () => {
 
     expect(handler).toHaveBeenCalledWith({
       data: { id: "id-1", name: "foo" },
-      params: { creatorId: "user-1" },
+      // 作用域不再混进 params：它单独传给 action，免得被「空值跳过筛选」那条规矩吃掉。
+      params: {},
       req: expect.any(Object),
     });
     expect(res.data.extra).toBe(true);
