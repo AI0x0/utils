@@ -116,9 +116,16 @@ export function createPostOperationFactory<TTable>({
             const body = await readPostBody(req, { contentType, parseBody });
             const extraBody = (await setBody?.(req)) || {};
             // 新建的行归属这次请求的作用域。默认情形下作用域就是 creatorId = 当前用户，
-            // 所以这与从前的行为逐字等价；换了归属列（比如 ownerId）时它自动跟着换。
+            // 换了归属列（比如 ownerId）时它自动跟着换。
             // 想再记一个「谁建的」用 setBody 补 —— 那是调用方的语义，库不猜。
-            const params = { ...scopeStamp(scope), ...body, ...extraBody };
+            //
+            // **归属戳必须最后展开**，这是一条安全不变量，别为了「让调用方能覆盖」而调顺序：
+            // `.input({ body })` 只校验、**不替换**请求体（next-rest-framework 交给 handler 的
+            // clone 会重新解析原始 JSON），而 createPostAction 直接 insert，中间没有第二道
+            // schema 过滤。所以只要 body 排在戳后面，客户端在 JSON 里塞一个 `ownerId` /
+            // `creatorId` 就能把行写到别人名下 —— 调用方把该列从 schema 里 omit 掉也拦不住。
+            // 见 __tests__/route-operation-scope-stamp。
+            const params = { ...body, ...extraBody, ...scopeStamp(scope) };
             const raw =
               table && db
                 ? (
@@ -240,14 +247,14 @@ export function createPutOperationFactory<TTable>({
                   z.infer<IB>
                 >,
               )) || {};
-            const params = {
-              // 「谁改的」与「能不能改」是两件事，所以这里自己取一次 —— 取值器带缓存，
-              // 上面 resolveAccess 若已取过就不会再往返一次。
-              editorId: ((await loadSession()) as DefaultSession | undefined)
-                ?.userId,
-              ...body,
-              ...extraBody,
-            };
+            // 「谁改的」与「能不能改」是两件事，所以这里自己取一次 —— 取值器带缓存，
+            // 上面 resolveAccess 若已取过就不会再往返一次。
+            const editorId = (
+              (await loadSession()) as DefaultSession | undefined
+            )?.userId;
+            // editorId 同样**最后**展开：它是审计字段，让请求体覆盖等于让人随便写「是谁改的」。
+            // 理由与 POST 那边的归属戳一样，见那里的说明。
+            const params = { ...body, ...extraBody, editorId };
             const raw =
               table && db
                 ? await createAction({
