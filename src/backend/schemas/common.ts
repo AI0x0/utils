@@ -1,0 +1,191 @@
+// ==============================================================================
+// 与方言无关的那几份 schema 助手（pg / sqlite 共用）
+// ==============================================================================
+// 下面这些统统只碰 zod，与用哪种数据库没有半点关系 —— 从前 pg 与 sqlite 的 schemas/index
+// 各抄了一份，170 行逐字相同，只有一句注释的措辞不一样。
+//
+// 抄两份的代价在 queryListSchema 上最明显：那七个字段的 `.describe()` 会流进每一个 list 端点
+// 的 OpenAPI spec，再从那里进生成的 client 与 CLI 文档。改一处措辞而忘了另一棵树，两边的接口
+// 文档就开始各说各话，而没有任何东西会报错。
+//
+// 留在各自 index 里的是真·方言相关的两样：basicFields（那几列怎么建）与 createTableSchema
+// （怎么拼表），它们绕不开各自的列构造器。
+
+import { z, ZodObject, ZodType } from "zod";
+
+/**
+ * 业务侧 insert schema 需要从 drizzle-zod 生成的 schema 中排除的基础字段。
+ * 这些字段由后端在 createPostAction 中自动写入。
+ *
+ * 使用方式（在业务 schema 中）：
+ *   const insertFooSchema = createInsertSchema(foos)
+ *     .omit(BASIC_INSERT_OMIT)
+ *     .extend({ ... });
+ *
+ * 说明：上游导出为 const 而不是 helper function，是为了避免经过泛型
+ * wrapper 后 TS 把 drizzle-zod 推导出的深层条件 Shape 归约成 Omit，
+ * 从而在下游 `.extend(...)` 时丢失原有字段类型。
+ */
+export const BASIC_INSERT_OMIT = {
+  id: true,
+  creatorId: true,
+  editorId: true,
+  accessedAt: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
+/**
+ * 业务侧 update schema 需要从 drizzle-zod 生成的 schema 中排除的基础字段。
+ * update 保留 id（随后用 `.required({ id: true })` 变成必填），其余由
+ * 后端 createPutAction 自动维护。
+ */
+export const BASIC_UPDATE_OMIT = {
+  creatorId: true,
+  editorId: true,
+  accessedAt: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
+// =============================================================================
+// 列表查询字段
+// =============================================================================
+// 说明写成 `.describe()` 而不是行末注释：注释只有读源码的人看得到，而这七个字段会出现在每一个
+// list 端点的 OpenAPI spec 里，再从那里流进生成的 client 与 CLI 文档。写成注释的代价是下游只能
+// 自己再手写一份 —— 那份必然会漂，而且漂了没有任何东西会报错。
+//
+// 类型是 string 而不是 number：query 参数在线上只有字符串，服务端收下之后才转数字。默认值也
+// 因此是 "1" / "10"。
+export const queryListSchema = <Incoming extends ZodObject>(schema: Incoming) =>
+  z
+    .object({
+      current: z
+        .string()
+        .optional()
+        .default("1")
+        .describe("Page number, starting at 1."),
+      pageSize: z
+        .string()
+        .optional()
+        .default("10")
+        .describe(
+          "Rows per page. Omitting it yields only 10 — pass a larger value to get the whole set.",
+        ),
+      createdAtFrom: z
+        .string()
+        .optional()
+        .describe(
+          "Keep only rows created at or after this instant (ISO 8601, e.g. 2026-08-01T00:00:00Z).",
+        ),
+      createdAtTo: z
+        .string()
+        .optional()
+        .describe("Keep only rows created at or before this instant."),
+      orderBy: z
+        .string()
+        .optional()
+        .describe(
+          "Column to sort by — a column name of this resource (createdAt / updatedAt and the like).",
+        ),
+      creatorId: z
+        .string()
+        .optional()
+        .describe(
+          "Keep only rows created by this user. Useful in shared spaces to filter down to one member.",
+        ),
+      orderDir: z
+        .enum(["asc", "desc"])
+        .optional()
+        .describe("Sort ascending or descending."),
+    })
+    .merge(schema);
+
+// =============================================================================
+// 列表返回字段
+// =============================================================================
+// 这两个字段出现在**每一个** list 端点的响应里，所以说明写在这儿一次就够 —— 下游那边它们是
+// 逐个 list 命令重复一遍的（在一个 101 端点的项目上是 24 行空白）。
+export const listBodySchema = <T extends ZodType>(schema: T) =>
+  z.object({
+    total: z
+      .number()
+      .describe(
+        "Total number of rows matching the filters — not the length of `data`. Use it to decide whether another page exists.",
+      ),
+    data: z.array(schema).describe("This page's rows."),
+  });
+
+// =============================================================================
+// 给基础字段挂说明
+// =============================================================================
+// basicFields 是 drizzle 列，而 drizzle 列没有「描述」这个概念 —— 所以说明只能挂在
+// drizzle-zod 出来的 schema 上。值得做是因为这六个字段出现在**每一张表**的 select schema 里：
+// 一处写完，所有 list / get 端点的返回字段表都有了（在 do-tv 上是 173 行）。
+//
+// 一律只挂元数据，**不换类型**：`.describe()` / `.meta()` 返回的是带元数据的克隆，校验行为一模
+// 一样。selectSchema 是有人拿去 safeParse 的（本包自己的测试就在用 Date 校验它），换类型等于改
+// 这个包的契约。
+//
+// 时间戳那三列额外用 `.meta()` 补上 JSON Schema 表示，因为不补就是错的：drizzle-zod 给的是
+// `z.date()`，而 `Date` 在 JSON Schema 里表达不出来，于是这三个字段在 spec 里是**空对象** ——
+// 没有 `type`，照 spec 生成的 client / CLI 只能得到 `unknown`。而线上根本不可能是 Date：响应一经
+// JSON 序列化就是 ISO 8601 字符串。
+//
+// `.meta({ type, format })` 恰好只改「怎么描述」不改「怎么校验」：spec 里成为
+// `{"type":"string","format":"date-time"}`，而 `safeParse(new Date())` 照样通过。
+// 不用 `z.iso.datetime()` 换掉它，是因为那既改了校验（不再收 Date），又会往 JSON Schema 里塞一条
+// 380 字节的正则 —— 乘上每张表几十 KB，而 `format` 已经把「按日期时间解析」说清楚了。
+const BASIC_FIELD_NOTES: Record<string, string> = {
+  creatorId:
+    "User id of the creator. Stamped by the server; clients cannot send it.",
+  editorId:
+    "User id of whoever changed this row last. Stamped by the server; clients cannot send it.",
+  id: "Primary key of this row (uuid).",
+};
+
+const BASIC_TIMESTAMP_NOTES: Record<string, string> = {
+  accessedAt: "When this row was last accessed.",
+  createdAt: "When this row was created.",
+  updatedAt: "When this row was last modified.",
+};
+
+/**
+ * 给 schema 上已有的字段挂说明。字段不在这个 schema 里就跳过 —— 同一张表的
+ * insert / update / select 三份含的列不一样（basicFields 只在 select 里），一份说明表要能同时
+ * 喂给三者，就不能对「字段一定存在」有要求。**不给不存在的字段凭空造一个。**
+ */
+export const describeFields = <T extends ZodObject>(
+  schema: T,
+  notes: Record<string, string>,
+): T => {
+  const overlay: Record<string, ZodType> = {};
+  for (const [field, note] of Object.entries(notes)) {
+    const existing = schema.shape[field] as ZodType | undefined;
+    if (existing) {
+      overlay[field] = existing.describe(note);
+    }
+  }
+  return Object.keys(overlay).length
+    ? (schema.extend(overlay) as unknown as T)
+    : schema;
+};
+
+// 只有两棵树的 createTableSchema 用得到它，所以是具名导出而不是公开 API 的一部分。
+export const describeBasicFields = <T extends ZodObject>(schema: T): T => {
+  const withNotes = describeFields(schema, BASIC_FIELD_NOTES);
+  const overlay: Record<string, ZodType> = {};
+  for (const [field, note] of Object.entries(BASIC_TIMESTAMP_NOTES)) {
+    const existing = withNotes.shape[field] as ZodType | undefined;
+    if (existing) {
+      overlay[field] = existing.meta({
+        description: note,
+        format: "date-time",
+        type: "string",
+      } as Parameters<ZodType["meta"]>[0]);
+    }
+  }
+  return Object.keys(overlay).length
+    ? (withNotes.extend(overlay) as unknown as T)
+    : withNotes;
+};

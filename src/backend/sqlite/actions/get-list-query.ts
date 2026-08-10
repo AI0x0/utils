@@ -1,265 +1,43 @@
-import { ScopeArg, scopeCondition } from "@/backend/scope";
+// ==============================================================================
+// 列表查询（SQLite）
+// ==============================================================================
+// 实现在 backend/actions/get-list-query-core，与 pg 那套共用。这里只给它两条 sqlite 专属的
+// 原语：sqlite 的 like 本来就不区分大小写（没有 ilike），JSON 数组用 json_each 展开。
+
 import { BaseTable, GetListRelations } from "@/backend/sqlite/types";
-import { SQLiteTable } from "drizzle-orm/sqlite-core";
 import { SelectedFields } from "drizzle-orm/sqlite-core/query-builders/select.types";
+import { Column, like, sql } from "drizzle-orm";
+import { ScopeArg } from "@/backend/scope";
 import {
-  and,
-  asc,
-  Column,
-  desc,
-  eq,
-  gte,
-  like,
-  inArray,
-  lte,
-  or,
-  sql,
-  SQL,
-} from "drizzle-orm";
+  createGetListQuery,
+  type ListQueryParams,
+} from "@/backend/actions/get-list-query-core";
+
+const run = createGetListQuery({
+  contains: (column: Column, keyword: string) => like(column, `%${keyword}%`),
+  // json_each 展开出来的行里，值在 tag.value 上（pg 那个 _text 变体是直接给字符串的）——
+  // 这是两边唯一一处连字段名都不同的地方。
+  jsonArrayContains: (column: Column, keyword: string) => sql`
+    EXISTS (
+      SELECT 1 FROM json_each(${column}) tag
+      WHERE tag.value LIKE ${`%${keyword}%`}
+    )
+  `,
+});
 
 export function getListQuery<
   TTable extends BaseTable,
   TSelection extends SelectedFields,
->({
-  db,
-  fields,
-  jsonArrayFields,
-  params,
-  scope,
-  relations,
-  table,
-}: {
+>(args: {
+  // 与改动前一致：sqlite 侧从来没有收紧过 db 的类型。
   db: any;
   fields: TSelection;
   jsonArrayFields?: string[];
   /** 必填。与 pg 那套同义，见 backend/scope.ts。 */
   scope: ScopeArg;
-  params: {
-    // 排序方向
-    [field: string]: unknown;
-    // 每页条数
-    orderBy?: keyof BaseTable;
-    // ==============================================================================
-    // Query Builder Functions
-    // ==============================================================================
-    // 排序字段
-    orderDir?: "asc" | "desc";
-    page?: number;
-    // 页码
-    pageSize?: number;
-  };
+  params: ListQueryParams;
   relations?: GetListRelations;
   table: TTable;
 }) {
-  const {
-    page = 1,
-    pageSize = 10,
-    orderBy = "createdAt",
-    orderDir = "desc",
-    ...filters
-  } = params;
-
-  // 构建基础查询
-  function buildBaseQuery<
-    TTable extends BaseTable,
-    TSelection extends SelectedFields,
-  >(table: TTable, fields: TSelection, relations?: GetListRelations) {
-    let queryFields = { ...fields };
-
-    // 添加关联字段
-    if (relations?.length) {
-      for (const { select } of relations) {
-        queryFields = { ...queryFields, ...select };
-      }
-    }
-
-    const query = db.select(queryFields).from(table as unknown as SQLiteTable);
-
-    // 添加分组
-    if (relations?.length) {
-      query.groupBy(
-        table.id,
-        ...relations
-          .filter(({ groupBy }) => groupBy)
-          .filter(({ table }) => table)
-          .map(({ table }) => (table as BaseTable).id),
-      );
-    }
-
-    return query;
-  }
-
-  // 查找目标列
-  function findTargetColumn(
-    key: keyof BaseTable,
-    table: BaseTable,
-    relations?: GetListRelations,
-  ) {
-    return [table]
-      .concat(
-        relations
-          ?.filter(({ table }) => table)
-          .map(({ table }) => table as BaseTable) || [],
-      )
-      .find((table) => table[key])?.[key] as Column;
-  }
-
-  // 添加条件
-  function addCondition(
-    conditions: SQL[],
-    key: string,
-    value: unknown,
-    targetColumn: Column,
-  ) {
-    const isIdField = /id/i.test(key);
-    const isJsonArray = jsonArrayFields?.includes(key);
-
-    if (typeof value === "string") {
-      if (value.includes(",")) {
-        // 处理多值
-        const values = value
-          .split(",")
-          .map((val) => val.trim())
-          .filter(Boolean);
-
-        if (values.length > 0) {
-          if (isJsonArray) {
-            // 处理 JSON 数组字段
-            conditions.push(
-              sql`
-                EXISTS (
-                  SELECT 1 FROM json_each(${targetColumn}) tag
-                  WHERE tag.value LIKE ${`%${values[0]}%`}
-                )
-              `,
-            );
-          } else if (isIdField) {
-            conditions.push(inArray(targetColumn, values));
-          } else {
-            conditions.push(
-              or(
-                ...values.map((val: string) => like(targetColumn, `%${val}%`)),
-              ) as SQL,
-            );
-          }
-        }
-      } else {
-        // 处理单值
-        if (isJsonArray) {
-          // 处理 JSON 数组字段
-          conditions.push(
-            sql`
-              EXISTS (
-                SELECT 1 FROM json_each(${targetColumn}) tag
-                WHERE tag.value LIKE ${`%${value}%`}
-              )
-            `,
-          );
-        } else if (isIdField) {
-          conditions.push(eq(targetColumn, value));
-        } else {
-          conditions.push(like(targetColumn, `%${value}%`));
-        }
-      }
-    } else {
-      conditions.push(eq(targetColumn, value));
-    }
-  }
-
-  // 构建查询条件
-  function buildConditions(
-    filters: Record<string, unknown>,
-    table: BaseTable,
-    relations?: GetListRelations,
-  ) {
-    const conditions: SQL[] = [];
-
-    // 处理过滤条件
-    for (const [key, value] of Object.entries(filters)) {
-      if (!value) {
-        continue;
-      }
-
-      // 处理日期范围字段
-      if (key.endsWith("AtFrom") || key.endsWith("AtTo")) {
-        const baseFieldName = key.replace(/(AtFrom|AtTo)$/, "");
-        const targetColumn = findTargetColumn(
-          `${baseFieldName}At` as keyof BaseTable,
-          table,
-          relations,
-        );
-
-        if (!targetColumn) {
-          continue;
-        }
-
-        if (key.endsWith("AtFrom")) {
-          conditions.push(gte(targetColumn, new Date(value as string)));
-        } else if (key.endsWith("AtTo")) {
-          conditions.push(lte(targetColumn, new Date(value as string)));
-        }
-        continue;
-      }
-
-      // 处理其他普通过滤条件
-      const targetColumn = findTargetColumn(
-        key as keyof BaseTable,
-        table,
-        relations,
-      );
-      if (!targetColumn) {
-        continue;
-      }
-
-      addCondition(conditions, key, value, targetColumn);
-    }
-
-    return conditions;
-  }
-
-  // 构建排序
-  function buildOrderBy(
-    table: BaseTable,
-    orderBy: keyof BaseTable,
-    orderDir: "asc" | "desc",
-  ) {
-    const orderColumn = table[orderBy] as Column;
-    return orderDir === "asc" ? asc(orderColumn) : desc(orderColumn);
-  }
-
-  // 构建基础查询
-  const baseQuery = buildBaseQuery(table, fields, relations);
-
-  // 构建条件
-  // 作用域先加，且不受「空值跳过」那条规矩管（见 backend/scope.ts 第 1 条）。
-  const scopeSql = scopeCondition(table as never, scope);
-  const conditions = scopeSql ? [scopeSql] : [];
-  conditions.push(...buildConditions(filters, table, relations));
-
-  // 构建主查询
-  const query = baseQuery
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(buildOrderBy(table, orderBy, orderDir))
-    .limit(pageSize)
-    .offset((page - 1) * pageSize);
-
-  // 构建计数查询(优化后)
-  const countQuery = db
-    .select({ count: sql`COUNT(DISTINCT ${table.id})` })
-    .from(table as unknown as SQLiteTable)
-    .where(conditions.length > 0 ? and(...conditions) : undefined);
-
-  // 添加关联
-  if (relations?.length) {
-    for (const { table: relationTable, sql: joinSql } of relations) {
-      if (relationTable) {
-        query.leftJoin(relationTable, joinSql);
-        countQuery.leftJoin(relationTable, joinSql);
-      }
-    }
-  }
-
-  // console.log(query.prepare("a").getQuery());
-
-  return { countQuery, query };
+  return run(args);
 }

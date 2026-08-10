@@ -1,35 +1,23 @@
-import { transformBody } from "./transform-body";
-import { and, eq } from "drizzle-orm";
+// 改一行。实现与 pg 那套共用，见 backend/actions/write-action-core（三条安全性质写在那儿）。
+
 import { BaseTable } from "@/backend/sqlite/types";
-import { NO_SCOPE, ScopeArg, scopeCondition } from "@/backend/scope";
-import { HttpError } from "@/backend/sqlite/errors";
+import { ScopeArg } from "@/backend/scope";
+import { createPutActionCore } from "@/backend/actions/write-action-core";
 
 export function createPutAction<TTable extends BaseTable>({
   db,
   table,
 }: {
+  // 与改动前一致：sqlite 侧从来没有收紧过这两栏的类型。
   bodySchema: any;
   db: any;
   table: TTable;
 }) {
+  const run = createPutActionCore({ db, table });
+  // 返回 any 而不是核心那个 unknown —— 这一栏改动前就是 any，收紧它对下游是破坏性的，
+  // 而这次改动的意图是「实现合并」，不是「顺手改公开类型」。
   return async (
     body: Record<string, unknown>,
-    // 与 pg 那套逐字同义，说明见 backend/actions/create-put-action。
-    { scope }: { scope: ScopeArg },
-  ): Promise<any> => {
-    const id = body.id as string;
-    if (!id) {
-      throw new HttpError(400, "缺少 id");
-    }
-    const guard = scopeCondition(table as never, scope);
-    const [data] = await db
-      .update(table)
-      .set(transformBody(body))
-      .where(guard ? and(eq(table.id, id), guard) : eq(table.id, id))
-      .returning();
-    if (!data && scope !== NO_SCOPE) {
-      throw new HttpError(404, "未找到编辑对象，或没有权限");
-    }
-    return data;
-  };
+    options: { scope: ScopeArg },
+  ): Promise<any> => run(body, options);
 }
