@@ -124,10 +124,16 @@ export const queryListSchema = <Incoming extends ZodObject>(schema: Incoming) =>
 // =============================================================================
 // 列表返回字段
 // =============================================================================
+// 这两个字段出现在**每一个** list 端点的响应里，所以说明写在这儿一次就够 —— 下游那边它们是
+// 逐个 list 命令重复一遍的（在一个 101 端点的项目上是 24 行空白）。
 export const listBodySchema = <T extends ZodType>(schema: T) =>
   z.object({
-    total: z.number(),
-    data: z.array(schema),
+    total: z
+      .number()
+      .describe(
+        "Total number of rows matching the filters — not the length of `data`. Use it to decide whether another page exists.",
+      ),
+    data: z.array(schema).describe("This page's rows."),
   });
 
 // =============================================================================
