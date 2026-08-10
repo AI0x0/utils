@@ -101,7 +101,9 @@ export function createPostOperationFactory<TTable>({
         })
         .outputs([
           {
-            body: schemas.response || z.object({ id: z.string() }),
+            body:
+              schemas.response ||
+              z.object({ id: z.string().describe("Id of the row created.") }),
             contentType: "application/json",
             status: 200,
           },
@@ -292,7 +294,7 @@ export function createPutOperationFactory<TTable>({
 // ==============================================================================
 
 const defaultDeleteBodySchema = z.object({
-  id: z.string(),
+  id: z.string().describe("Id of the row to delete."),
 });
 
 export type DeleteOperationParams<B extends ZodSchema> = z.infer<B> &
