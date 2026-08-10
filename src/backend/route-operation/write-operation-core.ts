@@ -12,6 +12,7 @@ import {
 import {
   AccessOptions,
   ActionFactory,
+  callerIdOf,
   DefaultSession,
   getDefaultTags,
   handleOperationError,
@@ -27,8 +28,12 @@ import { NO_SCOPE, ScopeArg } from "@/backend/scope";
 // POST create operation
 // ==============================================================================
 
+// creatorId 是**归属戳**（access.scope 指的那一列）——默认作用域下它确实叫 creatorId，
+// 但换成 `scope: { column: "ownerId" }` 之后这一行盖的就是 ownerId 了。要「谁发的请求」
+// 一律读 callerId，那个四个方法都有、也不受作用域配置影响。
 export type PostOperationParams<IB extends ZodSchema> = z.infer<IB> &
   Record<string, unknown> & {
+    callerId?: string;
     creatorId?: string;
   };
 
@@ -151,7 +156,12 @@ export function createPostOperationFactory<TTable>({
             const data = handler
               ? await handler({
                   data: raw as z.infer<OB>,
-                  params: params as PostOperationParams<IB>,
+                  // callerId 只加在**交给 handler 的那一份**上，不进上面 createAction 收到的
+                  // params —— 那一份会被原样 insert，而 callerId 不是任何表的列。
+                  params: {
+                    ...params,
+                    callerId: callerIdOf(session),
+                  } as PostOperationParams<IB>,
                   req,
                 })
               : (raw as z.infer<OB>);
@@ -166,8 +176,11 @@ export function createPostOperationFactory<TTable>({
 // PUT update operation
 // ==============================================================================
 
+// editorId 是要写进行里的**审计列**（「谁改的」）。它恰好等于调用者，但语义是两件事 ——
+// 判权请读 callerId，别读它。
 export type PutOperationParams<IB extends ZodSchema> = z.infer<IB> &
   Record<string, unknown> & {
+    callerId?: string;
     editorId?: string;
   };
 
@@ -278,7 +291,12 @@ export function createPutOperationFactory<TTable>({
             const data = handler
               ? await handler({
                   data: raw as z.infer<OB>,
-                  params: params as PutOperationParams<IB>,
+                  // 同 POST：callerId 不进 createAction 那一份（它会被 .set() 原样写进 UPDATE，
+                  // 而 callerId 不是列）。editorId 是列，所以它留在 params 里。
+                  params: {
+                    ...params,
+                    callerId: editorId,
+                  } as PutOperationParams<IB>,
                   req,
                 })
               : (raw as z.infer<OB>);
@@ -297,9 +315,12 @@ const defaultDeleteBodySchema = z.object({
   id: z.string().describe("Id of the row to delete."),
 });
 
+// 原先这里声明的是 `creatorId?: string`，而删除**从来没有填过它** —— 类型说有、运行时没有，
+// 于是 `requireAdmin(params.creatorId)` 这种判权写法编译绿灯、线上对所有人 401。换成 callerId
+// 并且真的盖上。
 export type DeleteOperationParams<B extends ZodSchema> = z.infer<B> &
   Record<string, unknown> & {
-    creatorId?: string;
+    callerId?: string;
     id: string;
   };
 
@@ -365,16 +386,33 @@ export function createDeleteOperationFactory<TTable>({
             const body = bodySchema.parse(
               await req.json(),
             ) as DeleteOperationParams<B>;
+            // loadSession 带缓存，下面取 callerId 时不会再往返一次。
+            const loadSession = sessionLoader(getSession, req);
             const { scope } = await resolveAccess({
               access,
-              loadSession: sessionLoader(getSession, req),
+              loadSession,
               method: "DELETE",
             });
             const data =
               table && db
                 ? await createAction({ db, table })({ id: body.id }, { scope })
                 : body;
-            await handler?.({ data, params: body, req });
+            // 删除这一支从前一个身份字段都不交，handler 只能拿到请求体 —— 而类型上却写着
+            // creatorId。判权因此没法在 handler 里做，只能靠 access，那对「先查一下这一行是谁
+            // 的再决定」这类规则不够用。现在 callerId 与另外三个方法一致。
+            //
+            // **只在真有 handler 时才取会话**：access.byCreator=false 的路由（公开删除）本来
+            // 一次会话都不读，不该因为多了这个字段而白读一次。
+            if (handler) {
+              await handler({
+                data,
+                params: {
+                  ...body,
+                  callerId: callerIdOf(await loadSession()),
+                },
+                req,
+              });
+            }
             return TypedNextResponse.json(data, { status: 200 });
           } catch (error) {
             return handleOperationError(error, catchHandler);

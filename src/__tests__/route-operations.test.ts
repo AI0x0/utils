@@ -236,7 +236,7 @@ describe("createPostOperation", () => {
     expect(handler).toHaveBeenCalledWith(
       expect.objectContaining({
         data: { creatorId: "user-1", name: "test" },
-        params: { creatorId: "user-1", name: "test" },
+        params: { callerId: "user-1", creatorId: "user-1", name: "test" },
         req: expect.any(Object),
       }),
     );
@@ -308,7 +308,8 @@ describe("createGetListOperation", () => {
     expect(handler).toHaveBeenCalledWith({
       data: { data: [], total: 0 },
       // 作用域不再混进 params：它单独传给 action，免得被「空值跳过筛选」那条规矩吃掉。
-      params: {},
+      // callerId 是例外：它只加在交给 handler 的那一份上，不进 action 收到的筛选条件。
+      params: { callerId: "user-1" },
       req: expect.any(Object),
     });
     expect(res.data.total).toBe(1);

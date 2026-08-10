@@ -22,6 +22,21 @@ export interface DefaultSession {
 }
 
 /**
+ * 「这次请求是谁发的」。四个方法都会把它盖进 params.callerId，自定义 handler 判权、署名、
+ * 判「是不是本人」一律读它。
+ *
+ * **不要拿 params.creatorId 当调用者用。** 那是另一件事：POST 上的 creatorId 是**归属戳**
+ * （access.scope 指的那一列，换成 ownerId 时它就不叫 creatorId 了），PUT 上的 editorId 是要
+ * 写进行里的**审计列**。两者都恰好等于调用者只是默认配置下的巧合。
+ *
+ * 会话形状是泛型的（调用方可以塞自己的 Scope 进来），所以这里按 DefaultSession 取 userId ——
+ * 自定义会话只要带着这个字段就通用。
+ */
+export function callerIdOf(session: unknown): string | undefined {
+  return (session as DefaultSession | undefined)?.userId;
+}
+
+/**
  * 会话读取器。泛型化是为了让调用方能在这里一次性解析出「你是谁 + 你现在站在哪个空间 +
  * 你在那个空间里是什么角色」，后面 access.scope / access.can 都读同一份，不必各自再查一遍库。
  */
@@ -239,9 +254,15 @@ export function getDefaultTags<TTable>({
 // 读操作的参数
 // ==============================================================================
 
+// callerId 是服务端盖的，**不是** query 里来的：调用方在地址栏上写 `?callerId=别人`
+// 覆盖不了它（下面 getReadParams 里它最后展开）。
+//
+// 这里原先声明的是 `creatorId?: string`，而读操作从来没有填过它 —— 类型说有、运行时没有，
+// 于是 `if (!params.creatorId) throw 401` 这种判权写法编译绿灯、线上对所有人 401。
+// 那个字段已经删掉：要调用者就用 callerId，要按创建者筛就在 query schema 里显式声明一个。
 export type GetOperationParams<Q extends ZodSchema> = z.infer<Q> &
   Record<string, unknown> & {
-    creatorId?: string;
+    callerId?: string;
   };
 
 /**
@@ -283,6 +304,9 @@ export async function getReadParams<Q extends ZodSchema, TSession>({
     Object.fromEntries(new URL(req.url).searchParams),
   ) as z.infer<Q> & Record<string, unknown>;
   return {
+    // 这一份**不带 callerId**：它会被当成筛选条件送进查询构造器，而 callerId 不是任何表的列。
+    // 列表那边认不出的键会跳过（get-list-query 的 `if (!targetColumn) continue`），但别指望
+    // 这条兜底 —— 交给 handler 的那一份在 read-operation-core 里单独拼，见那里。
     params: { ...queryParams, ...extraParams } as GetOperationParams<Q>,
     scope,
     session,

@@ -13,6 +13,7 @@ import {
 import {
   AccessOptions,
   ActionFactory,
+  callerIdOf,
   DefaultSession,
   getDefaultTags,
   getReadParams,
@@ -106,7 +107,11 @@ export function createGetOperationFactory<TTable, TRelations>({
         ])
         .handler(async (req) => {
           try {
-            const { params: mergedParams, scope } = await getReadParams({
+            const {
+              params: mergedParams,
+              scope,
+              session,
+            } = await getReadParams({
               access,
               getSession,
               req,
@@ -127,7 +132,8 @@ export function createGetOperationFactory<TTable, TRelations>({
             if (handler) {
               result = await handler({
                 data: result,
-                params: mergedParams,
+                // callerId 只给 handler，不进上面那份筛选/写入用的 params（见 getReadParams）。
+                params: { ...mergedParams, callerId: callerIdOf(session) },
                 req,
               });
             }
@@ -220,7 +226,11 @@ export function createGetListOperationFactory<TTable, TRelations>({
         ])
         .handler(async (req) => {
           try {
-            const { params: mergedParams, scope } = await getReadParams({
+            const {
+              params: mergedParams,
+              scope,
+              session,
+            } = await getReadParams({
               access,
               getSession,
               req,
@@ -240,7 +250,8 @@ export function createGetListOperationFactory<TTable, TRelations>({
             if (handler) {
               result = await handler({
                 data: result as any,
-                params: mergedParams,
+                // callerId 只给 handler，不进上面那份筛选/写入用的 params（见 getReadParams）。
+                params: { ...mergedParams, callerId: callerIdOf(session) },
                 req,
               });
             }

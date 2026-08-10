@@ -91,7 +91,7 @@ describe("route operation handler payload", () => {
 
     expect(handler).toHaveBeenCalledWith({
       data: [{ id: "id-1", name: "foo" }],
-      params: { id: "id-1" },
+      params: { callerId: "user-1", id: "id-1" },
       req: expect.any(Object),
     });
   });
@@ -114,7 +114,7 @@ describe("route operation handler payload", () => {
     expect(handler).toHaveBeenCalledWith(
       expect.objectContaining({
         data: { id: "id-1", name: "foo" },
-        params: { creatorId: "user-1", name: "test" },
+        params: { callerId: "user-1", creatorId: "user-1", name: "test" },
         req: expect.any(Object),
       }),
     );
@@ -142,7 +142,7 @@ describe("route operation handler payload", () => {
     expect(handler).toHaveBeenCalledWith({
       data: { data: [{ id: "id-1", name: "foo" }], total: 1 },
       // 作用域不再混进 params：它单独传给 action，免得被「空值跳过筛选」那条规矩吃掉。
-      params: {},
+      params: { callerId: "user-1" },
       req: expect.any(Object),
     });
     expect(res.data.total).toBe(999);
@@ -169,7 +169,7 @@ describe("route operation handler payload", () => {
     expect(handler).toHaveBeenCalledWith({
       data: { id: "id-1", name: "foo" },
       // 作用域不再混进 params：它单独传给 action，免得被「空值跳过筛选」那条规矩吃掉。
-      params: {},
+      params: { callerId: "user-1" },
       req: expect.any(Object),
     });
     expect(res.data.extra).toBe(true);
@@ -193,7 +193,7 @@ describe("route operation handler payload", () => {
 
     expect(handler).toHaveBeenCalledWith({
       data: { id: "id-1", name: "foo" },
-      params: { editorId: "user-1", id: "id-1", name: "x" },
+      params: { callerId: "user-1", editorId: "user-1", id: "id-1", name: "x" },
       req: expect.any(Object),
     });
     expect(res.data.patched).toBe(true);

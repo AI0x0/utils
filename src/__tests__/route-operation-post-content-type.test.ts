@@ -103,7 +103,7 @@ describe("postOperation contentType", () => {
     expect(handler).toHaveBeenCalledWith(
       expect.objectContaining({
         data: { creatorId: "user-1", name: "json" },
-        params: { creatorId: "user-1", name: "json" },
+        params: { callerId: "user-1", creatorId: "user-1", name: "json" },
         req,
       }),
     );
