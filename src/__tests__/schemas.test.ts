@@ -213,3 +213,63 @@ describe("BASIC_INSERT_OMIT / BASIC_UPDATE_OMIT", () => {
     expect(ok.success).toBe(true);
   });
 });
+
+describe("createTableSchema 的 describe 参数", () => {
+  const { selectSchema, insertSchema, updateSchema } = createTableSchema({
+    name: "described_posts",
+    columns: {
+      title: text("title").notNull(),
+      views: integer("views").default(0),
+    },
+    serverColumns: {
+      ownerId: uuid("owner_id").notNull(),
+    },
+    describe: {
+      title: "Headline shown in listings.",
+      ownerId: "Who this row belongs to.",
+    },
+  });
+
+  // 说明要同时落在三份 schema 上：同一列在请求体里和响应里是同一个东西。
+  it("说明落到 insert / update / select 三份上", () => {
+    for (const schema of [insertSchema, updateSchema, selectSchema]) {
+      expect(schema.shape.title.description).toBe(
+        "Headline shown in listings.",
+      );
+    }
+  });
+
+  // serverColumns 不进 insert / update，所以它的说明只该出现在 select 上 —— 而不是让
+  // describeFields 去给一个不存在的字段凭空造一个。
+  it("serverColumns 的说明只出现在 select 上，不会凭空加字段", () => {
+    expect(selectSchema.shape.ownerId.description).toBe(
+      "Who this row belongs to.",
+    );
+    // 用 Object.keys 而不是 `shape.ownerId`：后者 TS 直接就报「这个属性不存在」——
+    // 那正是本条要断言的事，但写成属性访问就编译不过了。
+    expect(Object.keys(insertSchema.shape)).not.toContain("ownerId");
+    expect(Object.keys(updateSchema.shape)).not.toContain("ownerId");
+  });
+
+  it("没给说明的列不受影响", () => {
+    expect(insertSchema.shape.views.description).toBeUndefined();
+  });
+
+  it("挂说明不改校验行为", () => {
+    expect(insertSchema.safeParse({ title: "Hello" }).success).toBe(true);
+    expect(insertSchema.safeParse({ views: 1 }).success).toBe(false);
+  });
+
+  it("基础字段的默认说明仍在，且时间戳在 JSON Schema 里是 string", () => {
+    expect(selectSchema.shape.id.description).toBe(
+      "Primary key of this row (uuid).",
+    );
+    const json = z.toJSONSchema(selectSchema, {
+      io: "output",
+      target: "openapi-3.0",
+      unrepresentable: "any",
+    }) as { properties: Record<string, { type?: string; format?: string }> };
+    expect(json.properties.createdAt.type).toBe("string");
+    expect(json.properties.createdAt.format).toBe("date-time");
+  });
+});

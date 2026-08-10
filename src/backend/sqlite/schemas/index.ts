@@ -164,17 +164,32 @@ const BASIC_TIMESTAMP_NOTES: Record<string, string> = {
   updatedAt: "When this row was last modified.",
 };
 
-const describeBasicFields = <T extends ZodObject>(schema: T): T => {
+/**
+ * 给 schema 上已有的字段挂说明。字段不在这个 schema 里就跳过 —— 同一张表的
+ * insert / update / select 三份含的列不一样（basicFields 只在 select 里），一份说明表要能同时
+ * 喂给三者，就不能对「字段一定存在」有要求。**不给不存在的字段凭空造一个。**
+ */
+export const describeFields = <T extends ZodObject>(
+  schema: T,
+  notes: Record<string, string>,
+): T => {
   const overlay: Record<string, ZodType> = {};
-  for (const [field, note] of Object.entries(BASIC_FIELD_NOTES)) {
+  for (const [field, note] of Object.entries(notes)) {
     const existing = schema.shape[field] as ZodType | undefined;
-    // 表里没这一列就跳过 —— 不给不存在的字段凭空造一个。
     if (existing) {
       overlay[field] = existing.describe(note);
     }
   }
+  return Object.keys(overlay).length
+    ? (schema.extend(overlay) as unknown as T)
+    : schema;
+};
+
+const describeBasicFields = <T extends ZodObject>(schema: T): T => {
+  const withNotes = describeFields(schema, BASIC_FIELD_NOTES);
+  const overlay: Record<string, ZodType> = {};
   for (const [field, note] of Object.entries(BASIC_TIMESTAMP_NOTES)) {
-    const existing = schema.shape[field] as ZodType | undefined;
+    const existing = withNotes.shape[field] as ZodType | undefined;
     if (existing) {
       overlay[field] = existing.meta({
         description: note,
@@ -183,7 +198,9 @@ const describeBasicFields = <T extends ZodObject>(schema: T): T => {
       } as Parameters<ZodType["meta"]>[0]);
     }
   }
-  return schema.extend(overlay) as unknown as T;
+  return Object.keys(overlay).length
+    ? (withNotes.extend(overlay) as unknown as T)
+    : withNotes;
 };
 
 // =============================================================================
@@ -200,6 +217,11 @@ export const createTableSchema: <
   name: TTableName;
   /** 客户端能写的业务列。insert / update schema 只从这里推。 */
   columns: TColumnsMap;
+  /**
+   * 每一列的说明，键是列名。同时挂到 insert / update / select 三份 schema 上。语义与 pg 版
+   * 一致，见那边的说明。
+   */
+  describe?: Partial<Record<string, string>>;
   /** 由服务端盖、绝不接受客户端传的业务列（归属、租户 id 这类）。语义与 pg 版一致，见那边的说明。 */
   serverColumns?: Record<string, SQLiteColumnBuilderBase>;
   extraConfig?: (
@@ -217,7 +239,7 @@ export const createTableSchema: <
   querySchema: any;
   queryListSchema: any;
   queryListSelectSchema: any;
-} = ({ name, columns, serverColumns, extraConfig }) => {
+} = ({ name, columns, serverColumns, extraConfig, describe }) => {
   const mergedColumns = {
     ...basicFields,
     ...serverColumns,
@@ -230,12 +252,26 @@ export const createTableSchema: <
     extraConfig as never,
   ) as unknown as ReturnType<typeof sqliteTable>;
 
-  const selectSchema = describeBasicFields(createSelectSchema(table));
+  // 同一份说明喂给三份 schema：含哪些列各不相同，describeFields 会跳过不存在的。
+  const notes = (describe ?? {}) as Record<string, string>;
+
+  const selectSchema = describeFields(
+    describeBasicFields(createSelectSchema(table)),
+    notes,
+  );
   // 只从 columns 推 —— basicFields 与 serverColumns 都由服务端写，不该出现在请求体里。
-  const insertSchema = createInsertSchema(sqliteTable(name, columns));
-  const updateSchema = createUpdateSchema(
-    sqliteTable(name, { id: text("id"), ...columns }),
-  ).extend({ id: z.string().describe("Id of the row to update.") });
+  const insertSchema = describeFields(
+    createInsertSchema(sqliteTable(name, columns)),
+    notes,
+  );
+  const updateSchema = describeFields(
+    createUpdateSchema(
+      sqliteTable(name, { id: text("id"), ...columns }),
+    ).extend({
+      id: z.string().describe("Id of the row to update."),
+    }),
+    notes,
+  );
 
   const querySchema = z.object({
     id: z.string().describe("Id of the row to fetch."),

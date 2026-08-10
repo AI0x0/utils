@@ -162,17 +162,32 @@ const BASIC_TIMESTAMP_NOTES: Record<string, string> = {
   updatedAt: "When this row was last modified.",
 };
 
-const describeBasicFields = <T extends ZodObject>(schema: T): T => {
+/**
+ * 给 schema 上已有的字段挂说明。字段不在这个 schema 里就跳过 —— 同一张表的
+ * insert / update / select 三份含的列不一样（basicFields 只在 select 里），一份说明表要能同时
+ * 喂给三者，就不能对「字段一定存在」有要求。**不给不存在的字段凭空造一个。**
+ */
+export const describeFields = <T extends ZodObject>(
+  schema: T,
+  notes: Record<string, string>,
+): T => {
   const overlay: Record<string, ZodType> = {};
-  for (const [field, note] of Object.entries(BASIC_FIELD_NOTES)) {
+  for (const [field, note] of Object.entries(notes)) {
     const existing = schema.shape[field] as ZodType | undefined;
-    // 表里没这一列就跳过 —— 不给不存在的字段凭空造一个。
     if (existing) {
       overlay[field] = existing.describe(note);
     }
   }
+  return Object.keys(overlay).length
+    ? (schema.extend(overlay) as unknown as T)
+    : schema;
+};
+
+const describeBasicFields = <T extends ZodObject>(schema: T): T => {
+  const withNotes = describeFields(schema, BASIC_FIELD_NOTES);
+  const overlay: Record<string, ZodType> = {};
   for (const [field, note] of Object.entries(BASIC_TIMESTAMP_NOTES)) {
-    const existing = schema.shape[field] as ZodType | undefined;
+    const existing = withNotes.shape[field] as ZodType | undefined;
     if (existing) {
       overlay[field] = existing.meta({
         description: note,
@@ -181,7 +196,9 @@ const describeBasicFields = <T extends ZodObject>(schema: T): T => {
       } as Parameters<ZodType["meta"]>[0]);
     }
   }
-  return schema.extend(overlay) as unknown as T;
+  return Object.keys(overlay).length
+    ? (withNotes.extend(overlay) as unknown as T)
+    : withNotes;
 };
 
 // =============================================================================
@@ -200,9 +217,26 @@ export const createTableSchema = <
   columns,
   serverColumns,
   extraConfig,
+  describe,
 }: {
   /** 客户端能写的业务列。insert / update schema 只从这里推。 */
   columns: TColumnsMap;
+  /**
+   * 每一列的说明，键是列名。**同时挂到 insert / update / select 三份 schema 上** —— 同一列在
+   * 请求体里和响应里是同一个东西，说明没有理由写两遍。
+   *
+   * 为什么需要这个参数：drizzle 列没有「描述」这个概念，而 `.describe()` 只能挂在 zod 上。不给
+   * 这条路，业务侧就只能在每张表后面自己把三份 schema 各 `.extend()` 一遍 —— 那是三份副本，
+   * 而副本会漂。
+   *
+   * 键有类型约束（列名的联合），所以列改名了、拼错了都是编译错误，不是静默失效。
+   *
+   * 说明会出现在 OpenAPI spec 里，再流进按 spec 生成的 client 与文档 —— 所以它是写给调用方
+   * 看的：这一列是什么、合法值从哪来、不传会怎样。
+   */
+  describe?: Partial<
+    Record<Extract<keyof TColumnsMap | keyof TServerColumns, string>, string>
+  >;
   name: TTableName;
   /**
    * 由服务端盖、**绝不接受客户端传**的业务列：承载归属的 `ownerId`（配合
@@ -236,12 +270,24 @@ export const createTableSchema = <
     typeof basicFields & TServerColumns & TColumnsMap
   >(name, mergedColumns, extraConfig);
 
-  const selectSchema = describeBasicFields(createSelectSchema(table));
+  // 同一份说明喂给三份 schema：含哪些列各不相同，describeFields 会跳过不存在的。
+  const notes = (describe ?? {}) as Record<string, string>;
+
+  const selectSchema = describeFields(
+    describeBasicFields(createSelectSchema(table)),
+    notes,
+  );
   // 只从 columns 推 —— basicFields 与 serverColumns 都由服务端写，不该出现在请求体里。
-  const insertSchema = createInsertSchema(pgTable(name, columns));
-  const updateSchema = createUpdateSchema(
-    pgTable(name, { id: uuid("id"), ...columns }),
-  ).extend({ id: z.string().describe("Id of the row to update.") });
+  const insertSchema = describeFields(
+    createInsertSchema(pgTable(name, columns)),
+    notes,
+  );
+  const updateSchema = describeFields(
+    createUpdateSchema(pgTable(name, { id: uuid("id"), ...columns })).extend({
+      id: z.string().describe("Id of the row to update."),
+    }),
+    notes,
+  );
 
   const querySchema = z.object({
     id: z.string().describe("Id of the row to fetch."),
