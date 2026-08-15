@@ -14,14 +14,16 @@ import {
   type ListQueryParams,
 } from "./get-list-query-core";
 
+// pattern 由核心转义好再传进来（见 escapeLikePattern）。pg 这边不用写 ESCAPE 子句：
+// LIKE / ILIKE 默认就拿反斜杠当转义符，而模式串是绑定参数，不经过字符串字面量那套解析。
 const run = createGetListQuery({
-  contains: (column: Column, keyword: string) => ilike(column, `%${keyword}%`),
+  contains: (column: Column, pattern: string) => ilike(column, pattern),
   // jsonb 数组展开成行再逐个 LIKE。列存的是 text[] 形状的 jsonb（见 createTableSchema 的
   // jsonArrayFields），所以用 _text 那个变体，取到的 tag 直接就是字符串。
-  jsonArrayContains: (column: Column, keyword: string) => sql`
+  jsonArrayContains: (column: Column, pattern: string) => sql`
     EXISTS (
       SELECT 1 FROM jsonb_array_elements_text(${column}) tag
-      WHERE tag LIKE ${`%${keyword}%`}
+      WHERE tag LIKE ${pattern}
     )
   `,
 });
@@ -32,6 +34,8 @@ export function getListQuery<
 >(args: {
   db: NodePgDatabase<Record<string, unknown>>;
   fields: TSelection;
+  /** 允许被当成筛选条件的键。不传等于不限制，见核心里的说明。 */
+  filterable?: readonly string[];
   jsonArrayFields?: string[];
   /**
    * 行级作用域。**必填**，不想隔离就显式传 NO_SCOPE —— 写成可选的话，漏传就退化成查全表，

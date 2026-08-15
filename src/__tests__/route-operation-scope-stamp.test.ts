@@ -6,13 +6,14 @@ import { z } from "zod";
 // ==============================================================================
 // 这组用例守的是一条安全不变量：**一行归谁，由服务端的作用域说了算，客户端说什么都不算。**
 //
-// 为什么单靠 schema 拦不住（这也是这组用例存在的理由）：
-//   · `.input({ body })` 只校验，**不替换**请求体 —— next-rest-framework 交给 handler 的是个
-//     clone，它的 .json() 重新解析原始 JSON。所以 zod 本该 strip 掉的键照样到得了 handler；
+// 为什么不能只靠 schema（这也是这组用例存在的理由）：
+//   · 「把归属列从 insert schema 里 omit 掉」拦不拦得住，取决于 next-rest-framework 有没有把
+//     handler 收到的请求体换成校验后的那份 —— 那是被钉住的一个 fork 的行为，本仓库改不了也拦
+//     不住它变（write-body-strip 那组用例专门钉这一条）；
 //   · 而 createPostAction 是 `db.insert(table).values(transformBody(body))`，中间没有第二道
-//     schema 过滤。
-// 于是「把归属列从 insert schema 里 omit 掉」只是让它不出现在 OpenAPI 里，拦不住手写的请求。
-// 真正的边界只能是组装顺序：服务端算出来的值必须**最后**展开。
+//     schema 过滤，drizzle 会老老实实写下每一个**是真列**的键。
+// 所以归属不能挂在 schema 上。真正的边界是组装顺序：服务端算出来的值必须**最后**展开 ——
+// 这一条不依赖任何外部实现，下面这组用例直接调 handler，绕过了框架那层。
 
 type Operation = {
   _handler(req: any): Promise<any>;

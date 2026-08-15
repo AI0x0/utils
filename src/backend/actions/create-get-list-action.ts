@@ -31,10 +31,14 @@ export function createGetListAction<
       string,
       unknown
     > & { current?: number; pageSize?: number };
+    // 响应 schema 的字段集 = 调用方读得到的那些列。它同时决定两件事：**查什么**（下面的
+    // fields）和**能按什么筛**（filterable）。两者必须是同一份 —— 否则一个只返回 id / title 的
+    // 列表照样能 `?secret=sk-a` 让数据库去 ilike，再从 total 上把那一列逐字符读出来。
+    // @ts-ignore
+    const exposed: string[] = Object.keys(bodySchema.shape);
     const fields: SelectedFields = {};
 
-    // @ts-ignore
-    for (const key of Object.keys(bodySchema.shape)) {
+    for (const key of exposed) {
       // @ts-ignore
       const field = table[key];
       if (field) {
@@ -44,6 +48,7 @@ export function createGetListAction<
     const { query, countQuery } = getListQuery({
       db,
       fields,
+      filterable: exposed,
       jsonArrayFields,
       params: other,
       relations,

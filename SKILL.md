@@ -318,12 +318,14 @@ export const { GET } = route({
 - **Auto injection**: POST stamps the scope column with the scope value (by default that is `creatorId = session.userId`); PUT writes `editorId = session.userId`; GET/GET_LIST apply the scope as a mandatory `where`.
 - **Session shape** is yours: `getSession` is generic, so resolve "who + which space + what role" once and let `scope.value` / `can` read the same object instead of each querying again.
 - **Date coercion**: any body field ending in `At` is passed through `dayjs(value).toDate()` before write — accept ISO strings from clients.
-- **List filtering** (all querystring values are strings):
-  - `key=a,b,c` → `IN (...)` when key ends with `Id`; otherwise `OR ILIKE %a% OR ILIKE %b%`
-  - `key=foo` where key ends with `Id` → `eq`; otherwise `ILIKE %foo%`
-  - `${anything}AtFrom` / `${anything}AtTo` → `gte` / `lte` against the matching `${anything}At` column
+- **List filtering** (all querystring values are strings). **A column is filterable only if it appears in `schemas.response`** — the filter surface is the readable surface, so a list that returns `id / title` cannot be probed with `?secret=…` (unknown or unreadable keys are ignored, not rejected). Anything you want filterable belongs in the response schema.
+  - `key=a,b,c` → `IN (...)` when the key is `id` or ends with `Id`; otherwise `OR ILIKE %a% OR ILIKE %b%`
+  - `key=foo` where the key is `id` or ends with `Id` → `eq`; otherwise `ILIKE %foo%`
+  - non-text columns (uuid / number / date / enum) are always `eq` whatever the key looks like — `ILIKE` against them is a database type error, not an empty result
+  - `%` and `_` inside a value match literally; they are not wildcards
+  - `${anything}AtFrom` / `${anything}AtTo` → `gte` / `lte` against the matching `${anything}At` column; a value that is not a recognizable date is a 400
   - `jsonArrayFields: ["tags"]` → `EXISTS (SELECT 1 FROM jsonb_array_elements_text(col) t WHERE t LIKE %v%)`
-- **Pagination / sort**: `current` (default `"1"`), `pageSize` (default `"10"`), `orderBy` (default `createdAt`), `orderDir` (`asc|desc`, default `desc`).
+- **Pagination / sort**: `current` (default `"1"`), `pageSize` (default `"10"`, capped at `10000`, unparseable values fall back to the default — never to "no limit"), `orderBy` (default `createdAt`; must name a real column on the table, otherwise 400), `orderDir` (`asc|desc`, default `desc`).
 - **Relations**: `relations: [{ table, sql, select, groupBy? }]` drives `leftJoin` + optional `groupBy(root.id, relation.id)`; `select` merges into the final `SELECT` projection and can contain raw `sql\`…\`` correlated sub-queries.
 
 ## Guardrails
@@ -331,6 +333,7 @@ export const { GET } = route({
 - Always pass `insertXxxSchema` to POST, `updateXxxSchema` (has `.required({ id: true })`) to PUT, `selectXxxSchema` to GET body, `queryListSchema(selectXxxSchema.partial())` to GET_LIST query.
 - Query-string schemas stay `z.string()` — numbers / arrays from querystrings must stay strings and be parsed inside `handler` or `setParams`.
 - Do not reuse `insertSchema` for PUT — missing `id` silently dispatches an update without a where clause.
+- A `contentType: "multipart/form-data"` POST is reachable from a cross-site HTML form; a JSON one is not (the framework answers 415 on a mismatched content type). If the app authenticates with cookies, gate those routes on an `Origin` check of your own.
 - `schemas.response` on list/get is the **response item** schema, not the query shape. Query shape goes in `schemas.query`.
 - Do not inline `{ db, getSession }` into individual route files — always import the pre-bound `postOperation` / `getListOperation` / … from `@backend/utils/route-operation` so session/DB swaps are one-file changes.
 - `jsonb` columns declared with `jsonb(...)` carry no zod info — extend the matching insert/select schema with `.merge(z.object({ field: z.array(z.string()).optional() }))` to keep typing accurate.

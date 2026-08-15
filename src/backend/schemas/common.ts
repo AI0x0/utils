@@ -70,7 +70,7 @@ export const queryListSchema = <Incoming extends ZodObject>(schema: Incoming) =>
         .optional()
         .default("10")
         .describe(
-          "Rows per page. Omitting it yields only 10 — pass a larger value to get the whole set.",
+          "Rows per page. Omitting it yields only 10 — pass a larger value to get the whole set. Capped at 10000; compare `total` against what you received to tell whether more remain.",
         ),
       createdAtFrom: z
         .string()

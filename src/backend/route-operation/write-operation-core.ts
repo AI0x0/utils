@@ -129,11 +129,18 @@ export function createPostOperationFactory<TTable>({
             // creatorId，作者就没人写了，而 setBody 只能返回请求体 schema 里有的字段。
             // 归属戳排在它后面 —— 两者撞同一个键时以归属为准，那是更强的那条不变量。
             //
-            // **归属戳必须最后展开**，这是一条安全不变量，别为了「让调用方能覆盖」而调顺序：
-            // `.input({ body })` 只校验、**不替换**请求体（next-rest-framework 交给 handler 的
-            // clone 会重新解析原始 JSON），而 createPostAction 直接 insert，中间没有第二道
-            // schema 过滤。所以只要 body 排在戳后面，客户端在 JSON 里塞一个 `ownerId` /
-            // `creatorId` 就能把行写到别人名下 —— 调用方把该列从 schema 里 omit 掉也拦不住。
+            // **归属戳必须最后展开**，这是一条安全不变量，别为了「让调用方能覆盖」而调顺序。
+            //
+            // 请求体到这里已经被 `.input({ body })` 过了一遍 zod：next-rest-framework 把 handler
+            // 收到的那个 clone 的 `.json()` 换成了校验后的结果，所以 schema 里没有的键（归属列、
+            // basicFields、serverColumns）在这一步之前就没了。**但别把那当成这里的边界**：
+            //   · 它是被钉住的那个 fork 的行为，本仓库拦不住它变（见
+            //     __tests__/write-body-strip，那组用例就是钉它的）；
+            //   · 自定义 parseBody 会绕开它；`.catchall()` / `.passthrough()` 的 body schema
+            //     也会让未知键活着过来；
+            //   · createPostAction 是 `db.insert(table).values(body)`，中间没有第二道 schema
+            //     过滤，而 drizzle 会老老实实写下每一个**是真列**的键。
+            // 所以归属这一条不靠 schema，靠顺序：戳排在 body 后面，客户端塞什么都盖不掉。
             // 见 __tests__/route-operation-scope-stamp。
             const stamped =
               session === undefined ? {} : (access?.stamp?.(session) ?? {});

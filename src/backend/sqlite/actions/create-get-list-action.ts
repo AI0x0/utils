@@ -26,8 +26,10 @@ export function createGetListAction<TTable extends BaseTable>({
       string,
       unknown
     > & { current?: number; pageSize?: number };
+    // 筛选面与可见面同源，理由见 backend/actions/create-get-list-action 里的同一段。
+    const exposed: string[] = Object.keys(bodySchema.shape);
     const fields: SelectedFields = {};
-    for (const key of Object.keys(bodySchema.shape)) {
+    for (const key of exposed) {
       const field = table[key as keyof TTable];
       if (field) {
         fields[key] = field;
@@ -36,6 +38,7 @@ export function createGetListAction<TTable extends BaseTable>({
     const { query, countQuery } = getListQuery({
       db,
       fields,
+      filterable: exposed,
       jsonArrayFields,
       params: other,
       scope,

@@ -24,10 +24,12 @@ export function createGetAction<T extends ZodSchema, TTable extends BaseTable>({
     // 作用域必填，不隔离就显式 NO_SCOPE。理由见 backend/scope.ts 第 2 条。
     { scope }: { scope: ScopeArg },
   ) => {
+    // 筛选面与可见面同源，理由见 create-get-list-action 里的同一段。
+    // @ts-ignore
+    const exposed: string[] = Object.keys(bodySchema.shape);
     const fields: SelectedFields = {};
 
-    // @ts-ignore
-    for (const key of Object.keys(bodySchema.shape)) {
+    for (const key of exposed) {
       // @ts-ignore
       const field = table[key];
       if (field) {
@@ -37,6 +39,7 @@ export function createGetAction<T extends ZodSchema, TTable extends BaseTable>({
     const { query, countQuery } = getListQuery({
       db,
       fields,
+      filterable: exposed,
       jsonArrayFields,
       params,
       relations,
