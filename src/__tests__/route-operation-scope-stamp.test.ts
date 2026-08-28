@@ -19,7 +19,7 @@ type Operation = {
   _handler(req: any): Promise<any>;
 };
 
-vi.mock("next-rest-framework", () => {
+vi.mock("@ai0x0/next-rest-framework", () => {
   const makeBuilder = (ctx: any = {}) => ({
     input: (input: any) => makeBuilder({ ...ctx, _input: input }),
     outputs: () => makeBuilder(ctx),

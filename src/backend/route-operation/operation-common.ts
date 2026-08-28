@@ -1,5 +1,8 @@
 import { NextRequest } from "next/server";
-import { TypedNextRequest, TypedNextResponse } from "next-rest-framework";
+import {
+  TypedNextRequest,
+  TypedNextResponse,
+} from "@ai0x0/next-rest-framework";
 import { z, ZodSchema } from "zod";
 import { HttpError } from "@/backend/errors";
 import {

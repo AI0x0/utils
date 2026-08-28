@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import type { ZodType } from "zod";
 
-declare module "next-rest-framework" {
+declare module "@ai0x0/next-rest-framework" {
   export interface RouteOperationDefinition<M extends string = string> {
     _method: M;
   }

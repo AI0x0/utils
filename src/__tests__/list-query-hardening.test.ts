@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { route } from "next-rest-framework";
+import { route } from "@ai0x0/next-rest-framework";
 import { integer, pgTable, text, uuid } from "drizzle-orm/pg-core";
 import { sqliteTable, text as sqliteText } from "drizzle-orm/sqlite-core";
 import { drizzle } from "drizzle-orm/pg-proxy";

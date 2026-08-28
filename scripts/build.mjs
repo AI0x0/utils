@@ -11,7 +11,13 @@ const tsconfig = path.join(root, "tsconfig.json");
 const tsconfigBuild = path.join(root, "tsconfig.build.json");
 const tsconfigBackup = path.join(root, "tsconfig.json.bak");
 
-const nrfDir = path.join(root, "node_modules", "next-rest-framework", "dist");
+const nrfDir = path.join(
+  root,
+  "node_modules",
+  "@ai0x0",
+  "next-rest-framework",
+  "dist",
+);
 const nrfFiles = ["index.d.ts", "index.d.mts"];
 const nrfBackups = nrfFiles.map((f) => ({
   target: path.join(nrfDir, f),
@@ -19,12 +25,12 @@ const nrfBackups = nrfFiles.map((f) => ({
 }));
 
 const shim = fs.readFileSync(
-  path.join(root, "src", "__shims__", "next-rest-framework.d.ts"),
+  path.join(root, "src", "__shims__", "ai0x0-next-rest-framework.d.ts"),
   "utf8",
 );
 // 由于我们替换的是真实包自己的 .d.ts，需要写成模块形式而不是 declare module
 const shimAsModule = shim
-  .replace('declare module "next-rest-framework" {', "")
+  .replace('declare module "@ai0x0/next-rest-framework" {', "")
   .replace(/^}\s*$/m, "");
 
 if (!fs.existsSync(tsconfigBuild)) {

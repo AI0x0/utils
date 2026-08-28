@@ -3,7 +3,7 @@ import {
   routeOperation,
   TypedNextRequest,
   TypedNextResponse,
-} from "next-rest-framework";
+} from "@ai0x0/next-rest-framework";
 import { z, ZodSchema } from "zod";
 import {
   createOpenApiOperation,

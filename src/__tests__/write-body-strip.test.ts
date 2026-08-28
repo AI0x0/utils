@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { route } from "next-rest-framework";
+import { route } from "@ai0x0/next-rest-framework";
 import { pgTable, text, uuid } from "drizzle-orm/pg-core";
 import { basicFields } from "@/backend/schemas";
 import { createPostOperation } from "@/backend/route-operation/post-operation";

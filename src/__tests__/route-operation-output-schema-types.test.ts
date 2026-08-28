@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
-vi.mock("next-rest-framework", () => {
+vi.mock("@ai0x0/next-rest-framework", () => {
   const makeBuilder = () => ({
     input: () => makeBuilder(),
     outputs: () => makeBuilder(),

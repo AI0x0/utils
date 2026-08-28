@@ -1,6 +1,6 @@
 import { ZodSchema } from "zod";
 import { getListQuery } from "./get-list-query";
-import { rpcOperation } from "next-rest-framework";
+import { rpcOperation } from "@ai0x0/next-rest-framework";
 import { listBodySchema } from "../schemas";
 import { normalizePaging } from "./paging";
 

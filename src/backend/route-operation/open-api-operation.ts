@@ -1,4 +1,4 @@
-import type { routeOperation } from "next-rest-framework";
+import type { routeOperation } from "@ai0x0/next-rest-framework";
 
 export type RouteOpenApiOperation = NonNullable<
   Parameters<typeof routeOperation>[0]["openApiOperation"]
