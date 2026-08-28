@@ -23,6 +23,7 @@ import {
   sessionLoader,
 } from "./operation-common";
 import { NO_SCOPE, ScopeArg } from "@/backend/scope";
+import { withResponseHeaders } from "@/backend/response-headers";
 
 // ==============================================================================
 // POST create operation
@@ -172,7 +173,10 @@ export function createPostOperationFactory<TTable>({
                   req,
                 })
               : (raw as z.infer<OB>);
-            return TypedNextResponse.json(data, { status: 200 }) as any;
+            return withResponseHeaders(
+              TypedNextResponse.json(data, { status: 200 }),
+              session,
+            ) as any;
           } catch (error) {
             return handleOperationError(error, catchHandler);
           }
@@ -281,9 +285,9 @@ export function createPutOperationFactory<TTable>({
               )) || {};
             // 「谁改的」与「能不能改」是两件事，所以这里自己取一次 —— 取值器带缓存，
             // 上面 resolveAccess 若已取过就不会再往返一次。
-            const editorId = (
-              (await loadSession()) as DefaultSession | undefined
-            )?.userId;
+            // 会话对象本身也留着：出口处要拿它当键取这次请求攒下的响应头（见 withResponseHeaders）。
+            const session = await loadSession();
+            const editorId = (session as DefaultSession | undefined)?.userId;
             // editorId 同样**最后**展开：它是审计字段，让请求体覆盖等于让人随便写「是谁改的」。
             // 理由与 POST 那边的归属戳一样，见那里的说明。
             const params = { ...body, ...extraBody, editorId };
@@ -307,7 +311,10 @@ export function createPutOperationFactory<TTable>({
                   req,
                 })
               : (raw as z.infer<OB>);
-            return TypedNextResponse.json(data, { status: 200 }) as any;
+            return withResponseHeaders(
+              TypedNextResponse.json(data, { status: 200 }),
+              session,
+            ) as any;
           } catch (error) {
             return handleOperationError(error, catchHandler);
           }

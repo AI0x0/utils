@@ -23,6 +23,7 @@ import {
   SessionGetter,
 } from "./operation-common";
 import { ScopeArg } from "@/backend/scope";
+import { withResponseHeaders } from "@/backend/response-headers";
 
 // ==============================================================================
 // GET single operation
@@ -137,7 +138,10 @@ export function createGetOperationFactory<TTable, TRelations>({
                 req,
               });
             }
-            return TypedNextResponse.json(result, { status: 200 }) as any;
+            return withResponseHeaders(
+              TypedNextResponse.json(result, { status: 200 }),
+              session,
+            ) as any;
           } catch (error) {
             return handleOperationError(error, catchHandler);
           }
@@ -255,9 +259,10 @@ export function createGetListOperationFactory<TTable, TRelations>({
                 req,
               });
             }
-            return TypedNextResponse.json(result as any, {
-              status: 200,
-            }) as any;
+            return withResponseHeaders(
+              TypedNextResponse.json(result as any, { status: 200 }),
+              session,
+            ) as any;
           } catch (error) {
             return handleOperationError(error, catchHandler);
           }
