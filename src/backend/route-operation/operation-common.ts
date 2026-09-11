@@ -4,7 +4,7 @@ import {
   TypedNextResponse,
 } from "@ai0x0/next-rest-framework";
 import { z, ZodSchema } from "zod";
-import { HttpError } from "@/backend/errors";
+import { HttpError, httpErrorMessages } from "@/backend/errors";
 import {
   isEmptyScopeValue,
   NO_SCOPE,
@@ -143,12 +143,15 @@ export async function resolveAccess<TSession>({
 
   if (access?.can) {
     if (!session) {
-      throw new HttpError(401, "未登录");
+      throw new HttpError(401, (await httpErrorMessages()).unauthenticated);
     }
     const verdict = await access.can({ method, session });
     if (verdict !== true) {
       const denial = typeof verdict === "object" ? verdict : {};
-      throw new HttpError(denial.status ?? 403, denial.message ?? "没有权限");
+      throw new HttpError(
+        denial.status ?? 403,
+        denial.message ?? (await httpErrorMessages()).forbidden,
+      );
     }
   }
 
@@ -156,7 +159,7 @@ export async function resolveAccess<TSession>({
     return { scope: NO_SCOPE, session };
   }
   if (!session) {
-    throw new HttpError(401, "未登录");
+    throw new HttpError(401, (await httpErrorMessages()).unauthenticated);
   }
 
   const column = access?.scope?.column ?? DEFAULT_SCOPE_COLUMN;
@@ -167,7 +170,7 @@ export async function resolveAccess<TSession>({
   if (isEmptyScopeValue(value)) {
     throw new HttpError(
       403,
-      `无法确定这次请求的归属（${column}）。这不是「不做隔离」——请求被拒绝。`,
+      (await httpErrorMessages()).scopeUnresolved(column),
     );
   }
   return { scope: { column, value }, session };

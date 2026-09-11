@@ -16,7 +16,7 @@
 
 import { and, eq } from "drizzle-orm";
 import { NO_SCOPE, ScopeArg, scopeCondition } from "@/backend/scope";
-import { HttpError } from "@/backend/errors";
+import { HttpError, httpErrorMessages } from "@/backend/errors";
 import { transformBody } from "./transform-body";
 
 /** 核心用得到表的哪一部分：只有 id。dialect 各自的 Table 类型不进来。 */
@@ -52,7 +52,7 @@ export function createPutActionCore<TTable extends WriteActionTable>({
   ): Promise<unknown> => {
     const id = body.id as string;
     if (!id) {
-      throw new HttpError(400, "缺少 id");
+      throw new HttpError(400, (await httpErrorMessages()).missingId);
     }
     const [data] = await db
       .update(table)
@@ -60,7 +60,7 @@ export function createPutActionCore<TTable extends WriteActionTable>({
       .where(byId(table, id, scope))
       .returning();
     if (!data && scope !== NO_SCOPE) {
-      throw new HttpError(404, "未找到编辑对象，或没有权限");
+      throw new HttpError(404, (await httpErrorMessages()).editNotFound);
     }
     return data;
   };
@@ -72,14 +72,14 @@ export function createDeleteActionCore<TTable extends WriteActionTable>({
 }: WriteActionDeps<TTable>) {
   return async ({ id }: { id: string }, { scope }: { scope: ScopeArg }) => {
     if (!id) {
-      throw new HttpError(400, "缺少 id");
+      throw new HttpError(400, (await httpErrorMessages()).missingId);
     }
     const rows = await db
       .delete(table)
       .where(byId(table, id, scope))
       .returning();
     if (rows.length === 0 && scope !== NO_SCOPE) {
-      throw new HttpError(404, "未找到删除对象，或没有权限");
+      throw new HttpError(404, (await httpErrorMessages()).deleteNotFound);
     }
     return rows;
   };

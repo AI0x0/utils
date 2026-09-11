@@ -1,3 +1,6 @@
+// =============================================================================
+// 框架内建报错文案：默认中文 / resolver 覆盖 / 恢复默认 / resolver 抛错回落
+// =============================================================================
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { z } from "zod";
 import { pgTable, text } from "drizzle-orm/pg-core";
@@ -138,5 +141,96 @@ describe("HttpError 返回正确状态码", () => {
     );
     expect(catchHandler).toHaveBeenCalled();
     expect(res.status).toBe(418);
+  });
+});
+
+describe("httpErrorMessages 解析器", () => {
+  beforeEach(async () => {
+    const { setHttpErrorMessageResolver } = await import("@/backend/errors");
+    setHttpErrorMessageResolver(undefined);
+  });
+
+  it("注册解析器后，库内建报错按它出文案", async () => {
+    const { setHttpErrorMessageResolver } = await import("@/backend/errors");
+    setHttpErrorMessageResolver(() => ({
+      deleteNotFound: "Not found, or not yours",
+    }));
+    const { createDeleteOperation } =
+      await import("@/backend/route-operation/delete-operation");
+    const db = makeDb();
+    const operation = createDeleteOperation({
+      db,
+      getSession: async () => ({ userId: "user-1" }),
+    })({
+      table: testTable,
+      access: { byCreator: true },
+    });
+    const res = await (operation as unknown as Operation)._handler(
+      makeReq({ id: "id-1" }),
+    );
+    expect(res.status).toBe(404);
+    expect(res.data.message).toBe("Not found, or not yours");
+  });
+
+  it("解析器支持 async（按当前请求取语言的场景）", async () => {
+    const { setHttpErrorMessageResolver } = await import("@/backend/errors");
+    setHttpErrorMessageResolver(async () => ({
+      unauthenticated: "Not signed in",
+    }));
+    const { createDeleteOperation } =
+      await import("@/backend/route-operation/delete-operation");
+    const operation = createDeleteOperation({
+      db: makeDb(),
+      getSession: async () => undefined,
+    })({
+      table: testTable,
+      access: { byCreator: true },
+    });
+    const res = await (operation as unknown as Operation)._handler(
+      makeReq({ id: "id-1" }),
+    );
+    expect(res.status).toBe(401);
+    expect(res.data.message).toBe("Not signed in");
+  });
+
+  it("解析器自己抛错时回落默认中文，不吞掉原本的 401", async () => {
+    const { setHttpErrorMessageResolver } = await import("@/backend/errors");
+    setHttpErrorMessageResolver(() => {
+      throw new Error("messages not loaded");
+    });
+    const { createDeleteOperation } =
+      await import("@/backend/route-operation/delete-operation");
+    const operation = createDeleteOperation({
+      db: makeDb(),
+      getSession: async () => undefined,
+    })({
+      table: testTable,
+      access: { byCreator: true },
+    });
+    const res = await (operation as unknown as Operation)._handler(
+      makeReq({ id: "id-1" }),
+    );
+    expect(res.status).toBe(401);
+    expect(res.data.message).toBe("未登录");
+  });
+
+  it("没注册解析器时文案与从前逐字一致", async () => {
+    const { createPutOperation } =
+      await import("@/backend/route-operation/put-operation");
+    const db = makeDb();
+    const bodySchema = z.object({ id: z.string(), name: z.string() });
+    const operation = createPutOperation({
+      db,
+      getSession: async () => ({ userId: "user-1" }),
+    })({
+      schemas: { body: bodySchema },
+      table: testTable,
+      access: { byCreator: true },
+    });
+    const res = await (operation as unknown as Operation)._handler(
+      makeReq({ name: "x" }),
+    );
+    expect(res.status).toBe(400);
+    expect(res.data.message).toBe("缺少 id");
   });
 });
