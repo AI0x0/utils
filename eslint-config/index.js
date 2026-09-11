@@ -6,9 +6,14 @@
  *   import { ai0x0, allRestrictions, allRestrictionsWithNetworking }
  *     from "@ai0x0/utils/eslint-config/index.js";
  */
-import localPlugin from "../eslint-rules/index.js";
+import localPlugin, { SCOPED_RULES } from "../eslint-rules/index.js";
 
 export { localPlugin as ai0x0 };
+
+// 不进 recommended、需要调用方按 files 自行开启的规则名单。消费方按规则名全量铺 recommended
+// 之外的规则时（比如自己组装 rules 表），用这个集合过滤，别在调用方手抄一份 —— 手抄的
+// 那份在新增 scoped 规则时不会跟着更新。
+export { SCOPED_RULES };
 
 export const allRestrictions = [
   {
@@ -39,6 +44,12 @@ export const allRestrictions = [
   {
     selector: "CallExpression[callee.name='useCallback']",
     message: "禁止 useCallback。React Compiler 会自动记忆化，无需手动优化。",
+  },
+  {
+    selector:
+      ":matches(CallExpression[callee.name='memo'], CallExpression[callee.object.name='React'][callee.property.name='memo'])",
+    message:
+      "禁止 memo()。React Compiler 会自动记忆化；手写 memo 只会多一套独立的 props 浅比较，还容易把热点修在组件边界上、掩盖真正不稳定的 props。",
   },
   {
     selector: "JSXOpeningElement[name.name=/^(div|span|p|h[1-6])$/]",

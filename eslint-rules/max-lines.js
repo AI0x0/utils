@@ -62,7 +62,7 @@ const rule = {
     ],
     messages: {
       tooManyLines:
-        "单文件代码行数过多（{{ lineCount }} 行，最多 {{ max }} 行），请拆分为子文件。",
+        "单文件代码行数过多（{{ lineCount }} 行，最多 {{ max }} 行{{ skipped }}），请拆分为子文件。",
     },
   },
   create(context) {
@@ -97,6 +97,18 @@ const rule = {
           return;
         }
 
+        // 行数口径要写进消息里：默认注释与空行都不算，不说明的话看消息的人会拿
+        // 编辑器底部的总行数去对，对不上。
+        const skippedParts = [];
+        if (options.skipComments) {
+          skippedParts.push("注释");
+        }
+        if (options.skipBlankLines) {
+          skippedParts.push("空行");
+        }
+        const skipped =
+          skippedParts.length > 0 ? `，${skippedParts.join("与")}不计入` : "";
+
         context.report({
           node,
           loc: {
@@ -107,6 +119,7 @@ const rule = {
           data: {
             lineCount,
             max: options.max,
+            skipped,
           },
         });
       },

@@ -23,7 +23,7 @@ const rule = {
     schema: [],
     messages: {
       useFormRequired:
-        "检测到表单场景使用了 useState/useSetState 管理字段值。请改用 Form.useForm() 或 rc-field-form 的 useForm。详见 node_modules/@ai0x0/utils/.agents/skills/antd/SKILL.md。",
+        "检测到表单场景使用了 useState/useSetState 管理字段值。请改用 Form.useForm()（ProForm 场景直接交给 ProForm 字段），不要手写受控状态。",
     },
   },
   create(context) {

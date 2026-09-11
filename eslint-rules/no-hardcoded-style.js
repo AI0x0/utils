@@ -450,7 +450,7 @@ const rule = {
     schema: [],
     messages: {
       noHardcoded:
-        "禁止硬编码 `{{ {{key}}: {{value}} }}`。请使用 antd token（如 `token.marginSM`、`token.colorPrimary`）。可参考 node_modules/@ai0x0/utils/.agents/skills/antd/SKILL.md 了解 token 体系。",
+        "禁止硬编码 `{{ {{key}}: {{value}} }}`。请用 antd token：间距用 `token.marginSM` / `token.paddingSM`，颜色用 `token.colorPrimary` / `token.colorText`，圆角用 `token.borderRadius`（经 `theme.useToken()` 或 createStyles 的 token 参数取）。",
     },
   },
   create(context) {

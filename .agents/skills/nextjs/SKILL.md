@@ -235,9 +235,9 @@ ESLint 按行数强制分区数量：
 - `ai0x0/no-antd-space`：禁止 `<Space>` / `<Space.Compact>`，使用 `<Flex>`。
 - `ai0x0/require-use-form`：表单字段状态不能用 `useState` / `useSetState` 管。
 - `ai0x0/require-form-convention`：Form 必须 `onFinish`，字段必须 rules，禁止 Modal.onOk 提交。
-- `ai0x0/require-pro-components`：业务表单优先 ProComponents。
 - `ai0x0/no-use-request-run`：禁止解构 `run`，使用 `runAsync` 并在调用处 `await`。
 - `ai0x0/no-consecutive-setstate`：连续 `setState({ ... })` 要合并成一次。
+- scoped（不进 recommended，项目自行按 files 开启）：`ai0x0/api-route-via-nrf`、`ai0x0/no-direct-api-url`、`ai0x0/no-hardcoded-text`（i18n 裸文案闸，legacy 旧账名单经选项传入）。
 
 ## 常用命令
 

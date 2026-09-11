@@ -239,7 +239,6 @@ setState({ open: false, current: undefined });
 
 - `require-use-form`：受控表单字段必须交给 Form 管理。
 - `require-form-convention`：Form/onFinish/rules/Modal 提交/错误提示约定。
-- `require-pro-components`：ModalForm、ProForm 字段和 submitter 约定。
 - `no-hardcoded-style`：token 样式约定。
 - `no-antd-space`：Flex 替代 Space。
 - `no-use-request-run`：`runAsync` 替代 `run`。

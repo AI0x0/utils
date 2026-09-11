@@ -110,13 +110,14 @@ export default [
 | `no-one-letter-vars`      | Forbid single-letter variable names                                     |
 | `no-then`                 | Prefer `async/await` over `.then()`                                     |
 | `no-antd-space`           | Use `<Flex>` instead of `<Space>`                                       |
-| `require-pro-components`  | Require ProComponents usage                                             |
 | `require-section-divider` | Large files need `===` comment dividers                                 |
 | `no-consecutive-setstate` | Merge consecutive `setState` calls                                      |
 | `no-use-request-run`      | Forbid `useRequest.run()`                                               |
 | `require-use-form`        | Use `useForm()` for form state                                          |
 | `require-form-convention` | Form naming conventions                                                 |
 | `max-lines`               | Limit each file to 500 code lines and prompt splitting into child files |
+
+Scoped rules (not in `recommended`; enable per-file-glob in your own config): `api-route-via-nrf`, `no-direct-api-url`, `no-hardcoded-text` (i18n hardcoded-text gate with a `legacy` exemption list).
 
 ### Shared restrictions (`eslint-config/`)
 
@@ -147,7 +148,7 @@ export default [
 ];
 ```
 
-Restrictions cover: `TryStatement`, `as` (non-const), `useState`, `useEffect`, `useMemo`, `useCallback`, native `div/span/p/h` tags, hardcoded colors, `fetch` and `new WebSocket()`.
+Restrictions cover: `TryStatement`, `as` (non-const), `useState`, `useEffect`, `useMemo`, `useCallback`, `memo()`, native `div/span/p/h` tags, hardcoded colors, `fetch` and `new WebSocket()`.
 
 ## Installation
 
