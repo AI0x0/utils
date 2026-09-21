@@ -14,6 +14,7 @@ import maxLines from "./max-lines.js";
 import apiRouteViaNrf from "./api-route-via-nrf.js";
 import noDirectApiUrl from "./no-direct-api-url.js";
 import noHardcodedText from "./no-hardcoded-text.js";
+import noAccentBorder from "./no-accent-border.js";
 
 const rules = {
   "require-section-divider": requireSectionDivider,
@@ -29,6 +30,7 @@ const rules = {
   "api-route-via-nrf": apiRouteViaNrf,
   "no-direct-api-url": noDirectApiUrl,
   "no-hardcoded-text": noHardcodedText,
+  "no-accent-border": noAccentBorder,
 };
 
 // 这三条只管「特定位置」的代码，不能跟着 recommended 全局开：
