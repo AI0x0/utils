@@ -148,7 +148,7 @@ export default [
 ];
 ```
 
-Restrictions cover: `TryStatement`, `as` (non-const), `useState`, `useEffect`, `useMemo`, `useCallback`, `memo()`, native `div/span/p/h` tags, hardcoded colors, `fetch` and `new WebSocket()`.
+Restrictions cover: `TryStatement`, `as` (non-const), `useState`, `useEffect`, `useMemo`, `useCallback`, `useMemoizedFn`, `memo()`, native `div/span/p/h` tags, hardcoded colors, `fetch` and `new WebSocket()`.
 
 ## Installation
 

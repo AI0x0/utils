@@ -46,6 +46,11 @@ export const allRestrictions = [
     message: "禁止 useCallback。React Compiler 会自动记忆化，无需手动优化。",
   },
   {
+    selector: "CallExpression[callee.name='useMemoizedFn']",
+    message:
+      "禁止 useMemoizedFn。React Compiler 会自动记忆化：函数只抓不变的值时，引用本来就稳。只有「读着会变的值、引用却必须恒定 / 调用时必须读到最新闭包」才用它（进每个列表项或节点的回调、只在挂载时登记一次的订阅回调、冻住的元素属性、延后执行的回调），用时单行 // eslint-disable-next-line no-restricted-syntax 并注明原因。注意：useXxx 里删掉它之后要是一个 hook 都不剩，React Compiler 就不再编译这个函数。",
+  },
+  {
     selector:
       ":matches(CallExpression[callee.name='memo'], CallExpression[callee.object.name='React'][callee.property.name='memo'])",
     message:
